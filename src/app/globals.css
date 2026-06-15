@@ -1343,3 +1343,239 @@ body {
 .confirm-wrap .btn-primary {
   width: 100%;
 }
+
+/* ---------- Mobile layout ---------- */
+@media (max-width: 820px) {
+  html,
+  body {
+    min-height: 100%;
+  }
+
+  .page {
+    min-height: 100dvh;
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .machine-stage {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .marquee {
+    margin-bottom: 10px;
+    font-size: 10px;
+  }
+
+  .machine {
+    width: 100%;
+    padding: 14px;
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .machine-frame {
+    inset: 7px;
+  }
+
+  .machine-header {
+    padding-bottom: 12px;
+    margin-bottom: 14px;
+  }
+
+  .machine-body {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .glass-cabinet,
+  .control-panel {
+    flex: none;
+    width: 100% !important;
+    min-width: 0;
+    max-width: 100% !important;
+  }
+
+  .glass-cabinet {
+    gap: 22px;
+  }
+
+  .glass-interior,
+  .dispenser,
+  .control-info-card,
+  .digital-display,
+  .cart {
+    width: 100%;
+  }
+
+  .glass-viewport {
+    height: clamp(470px, 124vw, 620px);
+    min-height: 0;
+    --glass-rack-inset-bottom: 28px;
+  }
+
+  .cart-list {
+    max-height: min(320px, 42dvh);
+  }
+
+  .modal-backdrop {
+    align-items: flex-start;
+    padding: 12px;
+    overflow-y: auto;
+  }
+
+  .modal-card {
+    max-width: 100%;
+    max-height: calc(100dvh - 24px);
+    overflow-y: auto;
+    padding: 18px;
+    box-shadow: 5px 5px 0 var(--ink);
+  }
+
+  .checkout-list {
+    max-height: min(300px, 36dvh);
+  }
+
+  .sidebar-panel {
+    width: min(100vw, 420px);
+  }
+}
+
+@media (max-width: 560px) {
+  .machine-title {
+    font-size: clamp(24px, 9vw, 34px);
+    gap: 8px;
+    letter-spacing: 1px;
+  }
+
+  .machine-title-star {
+    font-size: 16px;
+  }
+
+  .neo-counter {
+    font-size: 9px;
+    letter-spacing: 1.4px;
+  }
+
+  .glass-viewport {
+    height: clamp(430px, 132vw, 540px);
+  }
+
+  .dispenser {
+    padding: 10px;
+  }
+
+  .dispenser-flap {
+    min-height: 64px;
+    max-height: 64px;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .dispensed-sticker img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .digital-display {
+    grid-template-columns: 1fr auto;
+    padding: 10px 12px;
+  }
+
+  .display-code {
+    font-size: clamp(30px, 11vw, 42px);
+  }
+
+  .display-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cart {
+    padding: 12px;
+  }
+
+  .cart-item {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .cart-item-info {
+    grid-column: 2 / 4;
+  }
+
+  .qty-controls {
+    grid-column: 2;
+  }
+
+  .cart-item-remove {
+    grid-column: 3;
+    justify-self: end;
+  }
+
+  .coupon-row,
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .coupon-apply,
+  .btn-primary,
+  .btn-ghost {
+    width: 100%;
+  }
+
+  .checkout-list li {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: 8px;
+  }
+
+  .checkout-line-total {
+    grid-column: 2 / 4;
+    justify-self: end;
+  }
+
+  .payment-methods {
+    grid-template-columns: 1fr;
+  }
+
+  .sticker-popout {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .sticker-popout-layer {
+    padding: 12px;
+  }
+
+  .sticker-popout-body {
+    gap: 10px;
+  }
+
+  .sticker-info-card {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 380px) {
+  .page {
+    padding: 8px;
+  }
+
+  .machine {
+    padding: 10px;
+  }
+
+  .glass-viewport {
+    height: 410px;
+  }
+
+  .control-info-card p {
+    font-size: 11px;
+  }
+
+  .modal-title {
+    font-size: 18px;
+    letter-spacing: 1.5px;
+  }
+}
