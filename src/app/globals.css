@@ -551,12 +551,11 @@ body {
 
 .dispenser-flap {
   min-height: 72px;
-  max-height: 132px;
+  max-height: 72px;
   background: var(--ink);
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
-  align-content: center;
   justify-content: flex-start;
   gap: 8px;
   padding: 10px 12px;
@@ -595,6 +594,39 @@ body {
   flex-direction: column;
   gap: 16px;
   overflow-x: hidden;
+}
+
+.control-info-card {
+  background: #fff;
+  border: 2px solid var(--line);
+  box-shadow: 5px 5px 0 var(--ink);
+  padding: 14px 16px;
+}
+
+.control-info-kicker {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.control-info-card strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+.control-info-card p {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  line-height: 1.45;
 }
 
 .digital-display {

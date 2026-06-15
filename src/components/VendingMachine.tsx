@@ -206,6 +206,12 @@ export default function VendingMachine() {
 
           {/* Control panel */}
           <div className="control-panel">
+            <div className="control-info-card">
+              <span className="control-info-kicker">SELECT STICKER</span>
+              <strong>Checkout</strong>
+              <p>Click each sticker code to see information. Tap sticker to add it to your cart.</p>
+            </div>
+
             <div className="digital-display">
               <span className="display-label">SELECTED</span>
               <AnimatePresence mode="popLayout">
