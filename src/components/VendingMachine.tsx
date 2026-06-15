@@ -154,8 +154,8 @@ export default function VendingMachine() {
         <div className="marquee-track">
           {Array.from({ length: 2 }).map((_, i) => (
             <span key={i}>
-              ✶ FREE SHIPPING OVER $40 ✶ NEW DROP JULY ✶ ✶ FREE SHIPPING OVER $40 ✶ NEW DROP JULY ✶ ✶
-              FREE SHIPPING OVER $40 ✶ NEW DROP JULY ✶ ✶ FREE SHIPPING OVER $40 ✶ NEW DROP JULY ✶&nbsp;
+              ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶
+              HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶&nbsp;
             </span>
           ))}
         </div>

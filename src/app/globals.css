@@ -1227,6 +1227,51 @@ body {
   margin-top: 10px;
 }
 
+.payment-options {
+  margin-top: 16px;
+  border: 1px dashed var(--line);
+  background: rgba(153, 173, 122, 0.14);
+  padding: 12px;
+}
+
+.payment-options-label {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ink);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
+.payment-methods {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.payment-method {
+  flex: none;
+  width: 100%;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  padding: 10px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease, transform 0.14s ease;
+}
+
+.payment-method:hover {
+  background: var(--ink);
+  color: var(--paper);
+  transform: translate(-1px, -1px);
+}
+
 .modal-actions {
   display: flex;
   gap: 12px;

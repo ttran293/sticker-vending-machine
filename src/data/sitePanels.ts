@@ -41,8 +41,16 @@ export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
         a: "They are about 2 inches, printed on white vinyl sticker paper, and finished with a clear laminate.",
       },
       {
+        q: "Do you offer refunds?",
+        a: "No refunds for now. Please check your order before sending it in. If a sticker arrives damaged, I can send a replacement.",
+      },
+      {
+        q: "How does shipping work?",
+        a: "Shipping is paid by the buyer and will be added to the order total.",
+      },
+      {
         q: "Is checkout real?",
-        a: "Payments are handled with Stripe at checkout.",
+        a: "Choose cash or Venmo at checkout to open a prefilled order email.",
       },
     ],
   },
