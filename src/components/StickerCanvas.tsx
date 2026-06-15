@@ -12,7 +12,7 @@ import {
 import Sticker3D from "./Sticker3D";
 
 const GRID_WIDTH = (GRID_COLS - 1) * GAP_X + STICKER_WIDTH;
-const SHELF_DROP = STICKER_HALF + 0.52;
+const SHELF_DROP = STICKER_HALF + 0.76;
 const SHELF_THICKNESS = 0.016;
 
 type Props = {

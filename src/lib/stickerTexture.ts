@@ -1,8 +1,9 @@
 import * as THREE from "three";
 
 /**
- * Composites a square artwork into a die-cut sticker look: a thin white border
- * with rounded corners on a transparent background.
+ * Composites sticker artwork into the rack texture.
+ * Transparent PNGs keep their alpha shape; flat images get the original rounded
+ * white backing.
  * Returns a Three.js texture ready to map onto a plane. Browser-only (Canvas 2D).
  */
 export function createDieCutTexture(img: HTMLImageElement): THREE.CanvasTexture {
@@ -20,23 +21,42 @@ export function createDieCutTexture(img: HTMLImageElement): THREE.CanvasTexture 
   const radius = 78;
   const border = 26; // thin white die-cut margin
 
-  // White die-cut backing (no soft shadow)
-  roundRect(ctx, x, y, w, h, radius);
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
+  if (hasTransparentPixels(img)) {
+    drawContain(ctx, img, x, y, w, h);
+  } else {
+    // White die-cut backing (no soft shadow)
+    roundRect(ctx, x, y, w, h, radius);
+    ctx.fillStyle = "#ffffff";
+    ctx.fill();
 
-  // Artwork clipped inside a slightly smaller rounded rect (leaves the white edge)
-  ctx.save();
-  roundRect(ctx, x + border, y + border, w - border * 2, h - border * 2, radius - border * 0.6);
-  ctx.clip();
-  drawCover(ctx, img, x + border, y + border, w - border * 2, h - border * 2);
-  ctx.restore();
+    // Artwork clipped inside a slightly smaller rounded rect (leaves the white edge)
+    ctx.save();
+    roundRect(ctx, x + border, y + border, w - border * 2, h - border * 2, radius - border * 0.6);
+    ctx.clip();
+    drawCover(ctx, img, x + border, y + border, w - border * 2, h - border * 2);
+    ctx.restore();
+  }
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 8;
   texture.needsUpdate = true;
   return texture;
+}
+
+function hasTransparentPixels(img: HTMLImageElement) {
+  const probeSize = 96;
+  const probe = document.createElement("canvas");
+  probe.width = probeSize;
+  probe.height = probeSize;
+  const probeCtx = probe.getContext("2d", { willReadFrequently: true })!;
+  probeCtx.drawImage(img, 0, 0, probeSize, probeSize);
+
+  const data = probeCtx.getImageData(0, 0, probeSize, probeSize).data;
+  for (let i = 3; i < data.length; i += 4) {
+    if (data[i] < 250) return true;
+  }
+  return false;
 }
 
 function roundRect(
@@ -79,4 +99,25 @@ function drawCover(
     sy = (img.height - sh) / 2;
   }
   ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
+}
+
+/** Draws an image fully inside the target rect, preserving transparent edges. */
+function drawContain(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  dx: number,
+  dy: number,
+  dw: number,
+  dh: number,
+) {
+  const ir = img.width / img.height;
+  const tr = dw / dh;
+  let w = dw;
+  let h = dh;
+  if (ir > tr) {
+    h = dw / ir;
+  } else {
+    w = dh * ir;
+  }
+  ctx.drawImage(img, dx + (dw - w) / 2, dy + (dh - h) / 2, w, h);
 }

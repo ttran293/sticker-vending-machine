@@ -43,6 +43,11 @@ export default function Sticker3D({
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
 
   useEffect(() => {
+    if (sticker.placeholder) {
+      setTexture(null);
+      return;
+    }
+
     let active = true;
     const loader = new THREE.TextureLoader();
     loader.load(
@@ -64,7 +69,7 @@ export default function Sticker3D({
     return () => {
       active = false;
     };
-  }, [sticker.image]);
+  }, [sticker.image, sticker.placeholder]);
 
   const material = useMemo(() => {
     if (!texture) return null;
@@ -80,11 +85,13 @@ export default function Sticker3D({
 
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (sticker.placeholder) return;
     onInfoChange(infoActive ? null : sticker);
   };
 
   const handleStickerClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
+    if (sticker.placeholder) return;
     punch.current = 0.12;
     onSelect(sticker);
   };
@@ -96,7 +103,7 @@ export default function Sticker3D({
     hoverT.current = THREE.MathUtils.lerp(hoverT.current, hovered ? 1 : 0, delta * 10);
 
     const bob = Math.sin(t * 1.1) * 0.01 * (1 - hoverT.current * 0.8);
-    group.current.position.y = position[1] + bob;
+    group.current.position.y = bob;
 
     const dimFactor = dimmed ? DIM_SCALE : 1;
     const infoBoost = infoActive ? 1.06 : 1;
@@ -136,86 +143,104 @@ export default function Sticker3D({
     punch.current = THREE.MathUtils.lerp(punch.current, 0, delta * 7);
   });
 
-  const infoCorner: [number, number, number] = [
-    STICKER_SIZE * 0.5,
-    -STICKER_SIZE * 0.5,
-    0.06,
-  ];
+  const slotLabelY = -STICKER_SIZE * BASE_SCALE * 0.62;
 
   return (
-    <group ref={group} position={position}>
-      {!material && (
-        <mesh scale={BASE_SCALE}>
-          <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
-          <meshBasicMaterial color="#cccccc" wireframe transparent opacity={0.35} />
-        </mesh>
-      )}
+    <group position={position}>
+      <group ref={group}>
+        {!material && !sticker.placeholder && (
+          <mesh scale={BASE_SCALE}>
+            <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
+            <meshBasicMaterial color="#cccccc" wireframe transparent opacity={0.35} />
+          </mesh>
+        )}
 
-      {material && (
-        <mesh
-          ref={meshRef}
-          material={material}
-          onPointerOver={(e) => {
-            e.stopPropagation();
-            setHovered(true);
-            gl.domElement.style.cursor = "pointer";
-          }}
-          onPointerOut={() => {
-            setHovered(false);
-            gl.domElement.style.cursor = "auto";
-          }}
-          onClick={handleStickerClick}
-        >
-          <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
-        </mesh>
-      )}
+        {sticker.placeholder && (
+          <>
+            <mesh>
+              <planeGeometry args={[STICKER_SIZE * 0.72, STICKER_SIZE * 0.72]} />
+              <meshBasicMaterial color="#ffffff" transparent opacity={0.38} depthWrite={false} />
+            </mesh>
+            <Html
+              center
+              position={[0, 0, 0.04]}
+              distanceFactor={13}
+              zIndexRange={[10, 0]}
+              pointerEvents="none"
+            >
+              <span className="sticker-placeholder-label">coming soon</span>
+            </Html>
+          </>
+        )}
 
-      {selectedCount > 0 && (
-        <Html
-          center
-          position={[STICKER_SIZE * 0.38, STICKER_SIZE * 0.38, 0.02]}
-          distanceFactor={13}
-          zIndexRange={[20, 0]}
-          pointerEvents="none"
-        >
-          <span className="cart-dot">{selectedCount}</span>
-        </Html>
-      )}
+        {material && (
+          <mesh
+            ref={meshRef}
+            material={material}
+            onPointerOver={(e) => {
+              e.stopPropagation();
+              setHovered(true);
+              gl.domElement.style.cursor = "pointer";
+            }}
+            onPointerOut={() => {
+              setHovered(false);
+              gl.domElement.style.cursor = "auto";
+            }}
+            onClick={handleStickerClick}
+          >
+            <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
+          </mesh>
+        )}
 
-      {sticker.saleLabel && (
-        <Html
-          center
-          position={[0, -STICKER_SIZE * 0.54, 0.03]}
-          distanceFactor={13}
-          zIndexRange={[30, 0]}
-          pointerEvents="none"
-        >
-          <span className="sticker-sale-label">{sticker.saleLabel}</span>
-        </Html>
-      )}
+        {!sticker.placeholder && selectedCount > 0 && (
+          <Html
+            center
+            position={[STICKER_SIZE * 0.38, STICKER_SIZE * 0.38, 0.02]}
+            distanceFactor={13}
+            zIndexRange={[20, 0]}
+            pointerEvents="none"
+          >
+            <span className="cart-dot">{selectedCount}</span>
+          </Html>
+        )}
+
+        {!sticker.placeholder && sticker.saleLabel && (
+          <Html
+            center
+            position={[0, -STICKER_SIZE * 0.54, 0.03]}
+            distanceFactor={13}
+            zIndexRange={[30, 0]}
+            pointerEvents="none"
+          >
+            <span className="sticker-sale-label">{sticker.saleLabel}</span>
+          </Html>
+        )}
+      </group>
 
       <Html
-        position={infoCorner}
+        center
+        position={[0, slotLabelY, 0.06]}
         distanceFactor={13}
         zIndexRange={[40, 0]}
         occlude={false}
-        style={{
-          transform: "translate(calc(-100% + 3px), calc(-100% + 3px))",
-          pointerEvents: "none",
-        }}
+        pointerEvents={sticker.placeholder ? "none" : "auto"}
       >
-        <button
-          type="button"
-          className={`sticker-btn sticker-btn--info${infoActive ? " is-active" : ""}`}
-          style={{ pointerEvents: "auto" }}
-          onClick={handleInfoClick}
-          onPointerDown={(e) => e.stopPropagation()}
-          aria-label={infoActive ? "Close info" : `Info for ${sticker.name}`}
-          title={infoActive ? "Close" : "Info"}
-        >
-          {infoActive ? "×" : "i"}
-        </button>
+        {sticker.placeholder ? (
+          <span className="sticker-slot-label is-placeholder">[{sticker.slotCode}]</span>
+        ) : (
+          <button
+            type="button"
+            className="sticker-slot-label"
+            onClick={handleInfoClick}
+            onPointerDown={(e) => e.stopPropagation()}
+            aria-label={`Open details for ${sticker.name}`}
+            title={sticker.name}
+          >
+            [{sticker.slotCode}]
+          </button>
+        )}
       </Html>
+
     </group>
   );
 }

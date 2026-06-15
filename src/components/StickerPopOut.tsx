@@ -28,7 +28,11 @@ export default function StickerPopOut({ sticker, selectedCount, onClose }: Props
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticker-popout-body">
-          <div className="sticker-popout-hero sticker-popout-panel">
+          <div
+            className={`sticker-popout-hero sticker-popout-panel${
+              sticker.transparent ? " sticker-popout-hero--transparent" : ""
+            }`}
+          >
             <Image
               src={sticker.image}
               alt={sticker.name}

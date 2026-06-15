@@ -47,6 +47,7 @@ export default function VendingMachine() {
   }, [sidebarPanel]);
 
   const add = (sticker: Sticker) => {
+    if (sticker.placeholder) return;
     setCounts((c) => ({ ...c, [sticker.id]: (c[sticker.id] ?? 0) + 1 }));
     setLastPicked(sticker);
   };
@@ -71,7 +72,10 @@ export default function VendingMachine() {
   };
 
   const lines: CartLine[] = useMemo(
-    () => stickers.filter((s) => counts[s.id]).map((s) => ({ sticker: s, count: counts[s.id] })),
+    () =>
+      stickers
+        .filter((s) => !s.placeholder && counts[s.id])
+        .map((s) => ({ sticker: s, count: counts[s.id] })),
     [counts],
   );
 
