@@ -15,11 +15,10 @@ type SitePanel = {
 export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
   about: {
     title: "ABOUT",
-    intro: "Sticker Machine · est. 2026",
     paragraphs: [
-      "A tiny random sticker machine on the web. Browse the glass cabinet, tap to vend, and collect peelable pups at the chute below.",
-      "Built with Next.js, React Three Fiber, and Framer Motion. The neocities energy is intentional — hard borders, monospace type, and zero gradient guilt.",
-      "Every sticker in the rack is a hand-made die-cut illustration. This demo checkout is simulated — no real charges, just good boys sliding down the slot.",
+      "This is a small side hustle and hobby project. Mostly, I just want to make fun stickers for my friends and build a little vending machine around them.",
+      "A lot of the ideas start from animal images I find online. I edit and remix them with AI tools until they feel cute, weird, or funny enough to become a sticker.",
+      "The physical stickers are made by me with a Cricut machine, so each design goes from digital edit to something I can cut, peel, and share.",
     ],
   },
   faq: {
@@ -31,27 +30,19 @@ export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
       },
       {
         q: "How do I read sticker details?",
-        a: "Click the i button on the bottom-right corner of any sticker.",
+        a: "Click the sticker code under an item, like [A1], to open its details.",
       },
       {
         q: "How do I remove stickers?",
         a: "Use − to drop one copy, or × on a cart row to clear that sticker entirely.",
       },
       {
-        q: "Where do selected stickers go?",
-        a: "They drop into the black tray under the glass — your digital chute.",
+        q: "What material are the stickers?",
+        a: "They are about 2 inches, printed on white vinyl sticker paper, and finished with a clear laminate.",
       },
       {
         q: "Is checkout real?",
-        a: "Nope. PAY is a simulated dispense for fun. No payment info is collected.",
-      },
-      {
-        q: "Do coupons work?",
-        a: "Try PEEL10, DOG5, or RANDOM in the cart coupon field before checkout.",
-      },
-      {
-        q: "Why dogs?",
-        a: "Because every sticker machine is better with fluffy pop-culture pups.",
+        a: "Payments are handled with Stripe at checkout.",
       },
     ],
   },
