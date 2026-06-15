@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
@@ -17,8 +17,14 @@ const StickerCanvas = dynamic(() => import("./StickerCanvas"), {
   loading: () => <div className="canvas-loading">loading rack&hellip;</div>,
 });
 
+type DispensedItem = {
+  key: string;
+  sticker: Sticker;
+};
+
 export default function VendingMachine() {
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [dispensedItems, setDispensedItems] = useState<DispensedItem[]>([]);
   const [lastPicked, setLastPicked] = useState<Sticker | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
@@ -27,6 +33,7 @@ export default function VendingMachine() {
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const dispenseSeq = useRef(0);
 
   useEffect(() => {
     if (!infoSticker) return;
@@ -48,11 +55,26 @@ export default function VendingMachine() {
 
   const add = (sticker: Sticker) => {
     if (sticker.placeholder) return;
+    const dispensedItem = {
+      key: `${sticker.id}-${dispenseSeq.current++}`,
+      sticker,
+    };
+    setDispensedItems((items) => [dispensedItem, ...items]);
     setCounts((c) => ({ ...c, [sticker.id]: (c[sticker.id] ?? 0) + 1 }));
     setLastPicked(sticker);
   };
 
   const decrement = (sticker: Sticker) => {
+    setDispensedItems((items) => {
+      const next = items.slice();
+      for (let i = 0; i < next.length; i += 1) {
+        if (next[i].sticker.id === sticker.id) {
+          next.splice(i, 1);
+          break;
+        }
+      }
+      return next;
+    });
     setCounts((c) => {
       const next = { ...c };
       const v = (next[sticker.id] ?? 0) - 1;
@@ -63,6 +85,7 @@ export default function VendingMachine() {
   };
 
   const removeLine = (sticker: Sticker) => {
+    setDispensedItems((items) => items.filter((item) => item.sticker.id !== sticker.id));
     setCounts((c) => {
       const next = { ...c };
       delete next[sticker.id];
@@ -77,17 +100,6 @@ export default function VendingMachine() {
         .filter((s) => !s.placeholder && counts[s.id])
         .map((s) => ({ sticker: s, count: counts[s.id] })),
     [counts],
-  );
-
-  const dispensedItems = useMemo(
-    () =>
-      lines.flatMap((line) =>
-        Array.from({ length: line.count }, (_, i) => ({
-          key: `${line.sticker.id}-${i}`,
-          sticker: line.sticker,
-        })),
-      ),
-    [lines],
   );
 
   const totalItems = lines.reduce((n, l) => n + l.count, 0);
@@ -126,6 +138,8 @@ export default function VendingMachine() {
     setCheckoutOpen(false);
     if (confirmed) {
       setCounts({});
+      setDispensedItems([]);
+      dispenseSeq.current = 0;
       setLastPicked(null);
       setConfirmed(false);
       setAppliedCoupon(null);
