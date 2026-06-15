@@ -31,7 +31,7 @@ function Shelves() {
         return (
           <mesh key={row} position={[0, y, -0.35]} renderOrder={0}>
             <boxGeometry args={[GRID_WIDTH, SHELF_THICKNESS, 0.01]} />
-            <meshBasicMaterial color="#d8d5cc" depthWrite={false} toneMapped={false} />
+            <meshBasicMaterial color="#546B41" depthWrite={false} toneMapped={false} />
           </mesh>
         );
       })}

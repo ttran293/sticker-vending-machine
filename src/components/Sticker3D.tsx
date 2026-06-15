@@ -151,26 +151,20 @@ export default function Sticker3D({
         {!material && !sticker.placeholder && (
           <mesh scale={BASE_SCALE}>
             <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
-            <meshBasicMaterial color="#cccccc" wireframe transparent opacity={0.35} />
+            <meshBasicMaterial color="#DCCCAC" wireframe transparent opacity={0.5} />
           </mesh>
         )}
 
         {sticker.placeholder && (
-          <>
-            <mesh>
-              <planeGeometry args={[STICKER_SIZE * 0.72, STICKER_SIZE * 0.72]} />
-              <meshBasicMaterial color="#ffffff" transparent opacity={0.38} depthWrite={false} />
-            </mesh>
-            <Html
-              center
-              position={[0, 0, 0.04]}
-              distanceFactor={13}
-              zIndexRange={[10, 0]}
-              pointerEvents="none"
-            >
-              <span className="sticker-placeholder-label">coming soon</span>
-            </Html>
-          </>
+          <Html
+            center
+            position={[0, 0, 0.04]}
+            distanceFactor={13}
+            zIndexRange={[10, 0]}
+            pointerEvents="none"
+          >
+            <span className="sticker-placeholder-label">coming soon</span>
+          </Html>
         )}
 
         {material && (

@@ -174,7 +174,6 @@ export default function VendingMachine() {
               ✶
             </span>
           </h1>
-          <p className="machine-subtitle">[ pick · peel · repeat ] est. 2026</p>
           <p className="neo-counter" aria-hidden>
             you are visitor #{" "}
             <span className="neo-counter-num">0{((totalItems % 9) + 1) * 47}</span>
