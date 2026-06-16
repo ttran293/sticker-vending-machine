@@ -153,23 +153,10 @@ const CAT_CLIMB_EXP_CATALOG = [
   },
 ] as const;
 
-const CAT_CLIMB_SPECIAL_CATALOG = [
-  {
-    slug: "cat-climb-wtf-dyno",
-    name: "WTF DYNO",
-    note: "wild dyno",
-    detail: "Cat climb special · dyno pose · about 2″ laminated vinyl",
-    price: 1.5,
-    image: "/stickers/cat_climb/wtf_dyno.png",
-    transparent: true,
-  },
-] as const;
-
 const CATEGORY_ROWS = [
   MUSIC_ALBUM_CATALOG,
   CAT_CLIMB_CATALOG,
   CAT_CLIMB_EXP_CATALOG,
-  CAT_CLIMB_SPECIAL_CATALOG,
 ] as const;
 
 const SALE_SLOTS: number[] = [];
