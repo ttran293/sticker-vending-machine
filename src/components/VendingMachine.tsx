@@ -165,15 +165,6 @@ export default function VendingMachine() {
         <div className="machine-frame" aria-hidden />
 
         <div className="machine-header">
-          <h1 className="machine-title">
-            <span className="machine-title-star" aria-hidden>
-              ✶
-            </span>
-            Sticker Machine
-            <span className="machine-title-star" aria-hidden>
-              ✶
-            </span>
-          </h1>
           <p className="neo-counter" aria-hidden>
             you are visitor #{" "}
             <span className="neo-counter-num">0{((totalItems % 9) + 1) * 47}</span>

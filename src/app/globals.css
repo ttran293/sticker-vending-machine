@@ -16,7 +16,7 @@
 
 html,
 body {
-  height: 100%;
+  min-height: 100%;
 }
 
 body {
@@ -35,10 +35,11 @@ body {
 
 /* ---------- Page / stage ---------- */
 .page {
-  min-height: 100%;
+  min-height: 100dvh;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   padding: 28px 16px 48px;
   overflow-x: hidden;
 }
@@ -46,6 +47,7 @@ body {
 .machine-stage {
   width: 100%;
   max-width: 980px;
+  margin-block: auto;
 }
 
 /* ---------- Marquee ---------- */
@@ -143,7 +145,7 @@ body {
 }
 
 .neo-counter {
-  margin: 10px 0 0;
+  margin: 0;
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
@@ -193,12 +195,12 @@ body {
 .glass-viewport {
   position: relative;
   width: 100%;
-  height: 700px;
-  min-height: 600px;
+  height: clamp(500px, 62vw, 620px);
+  min-height: 480px;
   background: var(--accent);
   border: 2px solid var(--line);
   overflow: hidden;
-  --glass-rack-inset-bottom: 44px;
+  --glass-rack-inset-bottom: 14px;
 }
 
 .glass-viewport > div {
@@ -1344,22 +1346,29 @@ body {
   width: 100%;
 }
 
-/* ---------- Mobile layout ---------- */
-@media (max-width: 820px) {
-  html,
-  body {
-    min-height: 100%;
+/* ---------- Short viewport (any width) ---------- */
+@media (max-height: 860px) {
+  .page {
+    padding: 16px 12px 32px;
   }
 
+  .glass-viewport {
+    height: clamp(360px, 48vh, 560px);
+    min-height: 0;
+    --glass-rack-inset-bottom: 10px;
+  }
+}
+
+/* ---------- Mobile layout ---------- */
+@media (max-width: 820px) {
   .page {
-    min-height: 100dvh;
-    align-items: flex-start;
     padding: 12px;
   }
 
   .machine-stage {
     width: 100%;
     max-width: 100%;
+    margin-block: 0;
   }
 
   .marquee {
@@ -1409,9 +1418,8 @@ body {
   }
 
   .glass-viewport {
-    height: clamp(470px, 124vw, 620px);
-    min-height: 0;
-    --glass-rack-inset-bottom: 28px;
+    height: clamp(430px, 124vw, 560px);
+    --glass-rack-inset-bottom: 10px;
   }
 
   .cart-list {

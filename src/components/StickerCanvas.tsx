@@ -79,19 +79,21 @@ function StickerRack({
 export default function StickerCanvas({ counts, infoOpenId, onSelect, onInfoChange }: Props) {
   return (
     <Canvas
-      camera={{ position: [0, 0, 18.8], fov: 40 }}
+      camera={{ position: [0, -0.2, 16.4], fov: 38 }}
       gl={{ antialias: true, alpha: true }}
       dpr={[1, 2]}
       style={{ width: "100%", height: "100%", display: "block" }}
     >
       <ambientLight intensity={1} />
       <Suspense fallback={null}>
-        <StickerRack
-          counts={counts}
-          infoOpenId={infoOpenId}
-          onSelect={onSelect}
-          onInfoChange={onInfoChange}
-        />
+        <group position={[0, 0.38, 0]}>
+          <StickerRack
+            counts={counts}
+            infoOpenId={infoOpenId}
+            onSelect={onSelect}
+            onInfoChange={onInfoChange}
+          />
+        </group>
       </Suspense>
     </Canvas>
   );

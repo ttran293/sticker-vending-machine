@@ -2,7 +2,7 @@
 export const STICKER_SIZE = 2.85;
 export const BASE_SCALE = 0.78;
 export const GAP_X = 2.28;
-export const GAP_Y = 2.9;
+export const GAP_Y = 2.72;
 
 export const STICKER_WIDTH = STICKER_SIZE * BASE_SCALE;
 export const STICKER_HALF = STICKER_WIDTH * 0.5;
