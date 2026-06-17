@@ -15,9 +15,10 @@ export const HOVER_SCALE = 1.18;
 const HOVER_HALF = STICKER_HALF * HOVER_SCALE;
 /** Inward hover lets columns sit near sticker width apart (not 2× hover diameter). */
 const HOVER_CLEARANCE_X = 0.06;
-const HOVER_CLEARANCE_Y = 0.42;
+/** Vertical gap between row centers — room for slot labels below each sticker. */
+const HOVER_CLEARANCE_Y = 0.06;
 export const GAP_X = STICKER_WIDTH + HOVER_CLEARANCE_X;
-export const GAP_Y = 2 * HOVER_HALF + HOVER_CLEARANCE_Y + 0.12;
+export const GAP_Y = 2 * HOVER_HALF + HOVER_CLEARANCE_Y;
 
 /**
  * FitCamera pulls back when bounds grow — raising BASE_SCALE alone barely changes
@@ -28,6 +29,9 @@ export const RACK_FIT_PADDING = 0.94;
 
 /** Nudge rack up so bottom-row slot labels fit above the green label strip. */
 export const RACK_Y_OFFSET = 0.16;
+
+/** Canvas NDC y — below this is row D */
+export const BOTTOM_ROW_POINTER_Y = -0.15;
 
 /** Visible rack extent from center — includes hover scale and slot labels. */
 export function getRackBounds() {

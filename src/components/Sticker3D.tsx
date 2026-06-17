@@ -1,15 +1,36 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Sticker } from "@/data/stickers";
 import { createDieCutTexture } from "@/lib/stickerTexture";
-import { BASE_SCALE, HOVER_SCALE, SLOT_LABEL_OFFSET, STICKER_HALF, STICKER_SIZE } from "@/lib/sticker3dConstants";
+import {
+  BASE_SCALE,
+  BOTTOM_ROW_POINTER_Y,
+  HOVER_SCALE,
+  SLOT_LABEL_HEIGHT,
+  SLOT_LABEL_OFFSET,
+  STICKER_HALF,
+  STICKER_SIZE,
+  STICKER_WIDTH,
+} from "@/lib/sticker3dConstants";
+import { useRackHover } from "./StickerRackHoverContext";
 
 const HOVER_Z = 0.5;
 const DIM_SCALE = 0.88;
+const STALE_POINTER_DELTA = 0.1;
+
+/** Full slot cell — sticker area + label below (blocks stray raycasts from row above). */
+const PLACEHOLDER_CELL_W = STICKER_WIDTH * 1.06;
+const PLACEHOLDER_CELL_H = STICKER_HALF + SLOT_LABEL_OFFSET + SLOT_LABEL_HEIGHT + 0.18;
+const PLACEHOLDER_CELL_Y = -(SLOT_LABEL_OFFSET + SLOT_LABEL_HEIGHT) * 0.42;
+
+function blockPointer(e: { stopPropagation: () => void; preventDefault?: () => void }) {
+  e.stopPropagation();
+  e.preventDefault?.();
+}
 
 type Props = {
   sticker: Sticker;
@@ -34,10 +55,38 @@ export default function Sticker3D({
   const meshRef = useRef<THREE.Mesh>(null);
   const punch = useRef(0);
   const hoverT = useRef(0);
-  const { gl } = useThree();
+  const hoveredRef = useRef(false);
+  const { gl, pointer } = useThree();
+  const rackHover = useRackHover();
 
-  const [hovered, setHovered] = useState(false);
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+
+  const clearHover = useCallback(() => {
+    hoveredRef.current = false;
+    hoverT.current = 0;
+    if (group.current) {
+      const dimFactor = dimmed ? DIM_SCALE : 1;
+      const infoBoost = infoActive ? 1.06 : 1;
+      group.current.scale.setScalar(BASE_SCALE * infoBoost * dimFactor);
+      group.current.position.x = 0;
+      group.current.position.y = 0;
+      group.current.position.z = infoActive ? 0.15 : 0;
+      group.current.rotation.x = 0;
+      group.current.rotation.y = 0;
+    }
+    gl.domElement.style.cursor = "auto";
+  }, [gl, infoActive, dimmed]);
+
+  useEffect(() => {
+    if (!rackHover || sticker.placeholder) return;
+    return rackHover.register(clearHover);
+  }, [rackHover, clearHover, sticker.placeholder]);
+
+  const handlePlaceholderPointer = (e: ThreeEvent<PointerEvent>) => {
+    e.stopPropagation();
+    rackHover?.clearAll();
+    gl.domElement.style.cursor = "default";
+  };
 
   useEffect(() => {
     if (sticker.placeholder) {
@@ -96,14 +145,18 @@ export default function Sticker3D({
 
   const handleStickerClick = (e: ThreeEvent<MouseEvent>) => {
     e.stopPropagation();
-    if (sticker.placeholder) return;
+    if (sticker.placeholder || rackHover?.isHoverLocked()) return;
+    if (pointer.y < BOTTOM_ROW_POINTER_Y) return;
+    if (Math.abs(e.pointer.y - pointer.y) > STALE_POINTER_DELTA) return;
+    if (e.intersections[0]?.object !== e.object) return;
     punch.current = 0.12;
     onSelect(sticker);
   };
 
   useFrame((state, delta) => {
-    if (!group.current) return;
+    if (!group.current || sticker.placeholder) return;
     const t = state.clock.elapsedTime + seed;
+    const hovered = hoveredRef.current;
 
     hoverT.current = THREE.MathUtils.lerp(hoverT.current, hovered ? 1 : 0, delta * 10);
 
@@ -165,29 +218,53 @@ export default function Sticker3D({
         )}
 
         {sticker.placeholder && (
-          <Html
-            center
-            position={[0, 0, 0.04]}
-            distanceFactor={htmlDistance}
-            zIndexRange={[10, 0]}
-            pointerEvents="none"
-          >
-            <div className="sticker-placeholder-shape" aria-hidden="true" />
-          </Html>
+          <>
+            <mesh
+              position={[0, PLACEHOLDER_CELL_Y, 0.18]}
+              renderOrder={30}
+              userData={{ slotCode: sticker.slotCode, kind: "placeholder-blocker" }}
+              onPointerOver={handlePlaceholderPointer}
+              onPointerOut={() => {
+                gl.domElement.style.cursor = "auto";
+              }}
+              onPointerDown={blockPointer}
+              onClick={blockPointer}
+            >
+              <planeGeometry args={[PLACEHOLDER_CELL_W, PLACEHOLDER_CELL_H]} />
+              <meshBasicMaterial transparent opacity={0.001} depthWrite depthTest />
+            </mesh>
+            <Html
+              center
+              position={[0, PLACEHOLDER_CELL_Y, 0.1]}
+              distanceFactor={htmlDistance}
+              zIndexRange={[10, 0]}
+              pointerEvents="none"
+              as="div"
+            >
+              <div className="sticker-placeholder-hit">
+                <div className="sticker-placeholder-shape" aria-hidden="true" />
+                <span className="sticker-slot-tag is-placeholder">[{sticker.slotCode}]</span>
+              </div>
+            </Html>
+          </>
         )}
 
         {material && (
           <mesh
             ref={meshRef}
             material={material}
+            userData={{ slotCode: sticker.slotCode, kind: "sticker" }}
             onPointerOver={(e) => {
               e.stopPropagation();
-              setHovered(true);
+              const stale = Math.abs(e.pointer.y - pointer.y) > STALE_POINTER_DELTA;
+              if (rackHover?.isHoverLocked() || pointer.y < BOTTOM_ROW_POINTER_Y || stale) return;
+              if (e.intersections[0]?.object !== e.object) return;
+              rackHover?.clearAll();
+              hoveredRef.current = true;
               gl.domElement.style.cursor = "pointer";
             }}
             onPointerOut={() => {
-              setHovered(false);
-              gl.domElement.style.cursor = "auto";
+              clearHover();
             }}
             onClick={handleStickerClick}
           >
@@ -208,17 +285,15 @@ export default function Sticker3D({
         )}
       </group>
 
-      <Html
-        center
-        position={[0, slotLabelY, 0.06]}
-        distanceFactor={htmlDistance}
-        zIndexRange={[40, 0]}
-        occlude={false}
-        pointerEvents={sticker.placeholder ? "none" : "auto"}
-      >
-        {sticker.placeholder ? (
-          <span className="sticker-slot-label is-placeholder">[{sticker.slotCode}]</span>
-        ) : (
+      {!sticker.placeholder && (
+        <Html
+          center
+          position={[0, slotLabelY, 0.06]}
+          distanceFactor={htmlDistance}
+          zIndexRange={[40, 0]}
+          occlude={false}
+          pointerEvents="auto"
+        >
           <button
             type="button"
             className="sticker-slot-label"
@@ -229,9 +304,8 @@ export default function Sticker3D({
           >
             [{sticker.slotCode}]
           </button>
-        )}
-      </Html>
-
+        </Html>
+      )}
     </group>
   );
 }

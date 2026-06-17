@@ -350,6 +350,16 @@ body {
   border: 1px solid var(--line);
 }
 
+.sticker-placeholder-hit {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+  cursor: default;
+  user-select: none;
+}
+
 .sticker-placeholder-shape {
   width: 76px;
   height: 76px;
@@ -358,6 +368,29 @@ body {
   box-shadow: 4px 4px 0 var(--ink);
   pointer-events: none;
   user-select: none;
+}
+
+.sticker-slot-tag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px dashed var(--line);
+  background: var(--paper);
+  color: var(--muted);
+  padding: 2px 6px;
+  font-family: inherit;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  line-height: 1;
+  user-select: none;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.sticker-slot-tag.is-placeholder {
+  box-shadow: none;
+  cursor: default;
 }
 
 .sticker-slot-label {
@@ -384,19 +417,6 @@ body {
   background: var(--ink);
   color: var(--paper);
   transform: translate(-1px, -1px);
-}
-
-.sticker-slot-label.is-placeholder {
-  border-style: dashed;
-  box-shadow: none;
-  color: var(--muted);
-  cursor: default;
-}
-
-.sticker-slot-label.is-placeholder:hover {
-  background: var(--paper);
-  color: var(--muted);
-  transform: none;
 }
 
 .sticker-btn {

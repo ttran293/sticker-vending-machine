@@ -1,7 +1,7 @@
 "use client";
 
-import { Suspense, useLayoutEffect } from "react";
-import { Canvas, useThree } from "@react-three/fiber";
+import { Suspense, useLayoutEffect, useRef } from "react";
+import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
 import { stickers, GRID_COLS, GRID_ROWS, type Sticker } from "@/data/stickers";
 import {
@@ -12,6 +12,7 @@ import {
   RACK_Y_OFFSET,
 } from "@/lib/sticker3dConstants";
 import Sticker3D from "./Sticker3D";
+import { RackHoverProvider, useRackHover } from "./StickerRackHoverContext";
 
 const CAMERA_FOV = 34;
 
@@ -54,47 +55,78 @@ function StickerRack({
 }) {
   return (
     <group>
-      {stickers.map((sticker, i) => {
-        const col = i % GRID_COLS;
-        const row = Math.floor(i / GRID_COLS);
-        const x = (col - (GRID_COLS - 1) / 2) * GAP_X;
-        const y = ((GRID_ROWS - 1) / 2 - row) * GAP_Y;
-        return (
-          <Sticker3D
-            key={sticker.id}
-            sticker={sticker}
-            position={[x, y, 0]}
-            seed={i * 1.7}
-            infoActive={infoOpenId === sticker.id}
-            dimmed={infoOpenId !== null && infoOpenId !== sticker.id}
-            onInfoChange={onInfoChange}
-            onSelect={onSelect}
-          />
-        );
-      })}
+      {[...stickers]
+        .sort((a, b) => Number(a.placeholder ?? false) - Number(b.placeholder ?? false))
+        .map((sticker) => {
+          const index = stickers.indexOf(sticker);
+          const col = index % GRID_COLS;
+          const row = Math.floor(index / GRID_COLS);
+          const x = (col - (GRID_COLS - 1) / 2) * GAP_X;
+          const y = ((GRID_ROWS - 1) / 2 - row) * GAP_Y;
+          return (
+            <Sticker3D
+              key={sticker.id}
+              sticker={sticker}
+              position={[x, y, 0]}
+              seed={index * 1.7}
+              infoActive={infoOpenId === sticker.id}
+              dimmed={infoOpenId !== null && infoOpenId !== sticker.id}
+              onInfoChange={onInfoChange}
+              onSelect={(sticker) => {
+                if (sticker.placeholder) return;
+                onSelect(sticker);
+              }}
+            />
+          );
+        })}
     </group>
   );
 }
 
 export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Props) {
+  const clearAllRef = useRef<(() => void) | null>(null);
+
   return (
     <Canvas
       camera={{ position: [0, 0, 10], fov: CAMERA_FOV }}
       gl={{ antialias: true, alpha: true }}
       dpr={[1, 2]}
       style={{ width: "100%", height: "100%", display: "block" }}
+      onPointerMissed={() => clearAllRef.current?.()}
     >
-      <FitCamera />
-      <ambientLight intensity={1} />
-      <Suspense fallback={null}>
-        <group position={[0, RACK_Y_OFFSET, 0]}>
-          <StickerRack
-            infoOpenId={infoOpenId}
-            onSelect={onSelect}
-            onInfoChange={onInfoChange}
-          />
-        </group>
-      </Suspense>
+      <RackHoverProvider clearAllRef={clearAllRef}>
+        <RackPointerBridge />
+        <FitCamera />
+        <ambientLight intensity={1} />
+        <Suspense fallback={null}>
+          <group position={[0, RACK_Y_OFFSET, 0]}>
+            <StickerRack
+              infoOpenId={infoOpenId}
+              onSelect={onSelect}
+              onInfoChange={onInfoChange}
+            />
+          </group>
+        </Suspense>
+      </RackHoverProvider>
     </Canvas>
   );
+}
+
+function RackPointerBridge() {
+  const rackHover = useRackHover();
+  const { gl, pointer } = useThree();
+
+  useFrame(() => {
+    rackHover?.syncBottomRow(pointer.y);
+  });
+
+  useLayoutEffect(() => {
+    if (!rackHover) return;
+    const clear = () => rackHover.clearAll();
+    const canvas = gl.domElement;
+    canvas.addEventListener("pointerleave", clear);
+    return () => canvas.removeEventListener("pointerleave", clear);
+  }, [rackHover, gl]);
+
+  return null;
 }
