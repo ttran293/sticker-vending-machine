@@ -217,7 +217,8 @@ export default function VendingMachine() {
               </p>
               <span className="control-info-kicker">SELECT STICKER</span>
               <strong>Checkout</strong>
-              <p>Click each sticker code to see information. Tap sticker to add it to your cart.</p>
+              <p>Click each sticker label to inspect. 
+                <br />Tap sticker to add it to your cart.</p>
             </div>
 
             <div className="digital-display">
@@ -230,7 +231,7 @@ export default function VendingMachine() {
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -10, opacity: 0 }}
                 >
-                  {lastPicked ? lastPicked.name.split(" ")[0] : "--"}
+                  {lastPicked ? lastPicked.slotCode : "--"}
                 </motion.span>
               </AnimatePresence>
               <span className="display-name">{lastPicked ? lastPicked.name : "pick a sticker"}</span>
