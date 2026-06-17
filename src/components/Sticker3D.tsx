@@ -1,92 +1,55 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useFrame } from "@react-three/fiber";
 import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Sticker } from "@/data/stickers";
 import { createDieCutTexture } from "@/lib/stickerTexture";
 import {
   BASE_SCALE,
-  BOTTOM_ROW_POINTER_Y,
   HOVER_SCALE,
-  SLOT_LABEL_HEIGHT,
+  PLACEHOLDER_CELL_H,
+  PLACEHOLDER_CELL_W,
+  PLACEHOLDER_CELL_Y,
   SLOT_LABEL_OFFSET,
   STICKER_HALF,
   STICKER_SIZE,
-  STICKER_WIDTH,
 } from "@/lib/sticker3dConstants";
 import { useRackHover } from "./StickerRackHoverContext";
 
 const HOVER_Z = 0.5;
 const DIM_SCALE = 0.88;
-const STALE_POINTER_DELTA = 0.1;
 
-/** Full slot cell — sticker area + label below (blocks stray raycasts from row above). */
-const PLACEHOLDER_CELL_W = STICKER_WIDTH * 1.06;
-const PLACEHOLDER_CELL_H = STICKER_HALF + SLOT_LABEL_OFFSET + SLOT_LABEL_HEIGHT + 0.18;
-const PLACEHOLDER_CELL_Y = -(SLOT_LABEL_OFFSET + SLOT_LABEL_HEIGHT) * 0.42;
-
-function blockPointer(e: { stopPropagation: () => void; preventDefault?: () => void }) {
-  e.stopPropagation();
-  e.preventDefault?.();
-}
+/** Meshes are visual only — pointer/hover is in rackPointer.ts */
+const noopRaycast = () => null;
 
 type Props = {
   sticker: Sticker;
+  row: number;
   position: [number, number, number];
   seed: number;
   infoActive: boolean;
   dimmed: boolean;
-  onSelect: (sticker: Sticker) => void;
   onInfoChange: (sticker: Sticker | null) => void;
 };
 
 export default function Sticker3D({
   sticker,
+  row,
   position,
   seed,
   infoActive,
   dimmed,
-  onSelect,
   onInfoChange,
 }: Props) {
   const group = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
   const punch = useRef(0);
   const hoverT = useRef(0);
-  const hoveredRef = useRef(false);
-  const { gl, pointer } = useThree();
   const rackHover = useRackHover();
 
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
-
-  const clearHover = useCallback(() => {
-    hoveredRef.current = false;
-    hoverT.current = 0;
-    if (group.current) {
-      const dimFactor = dimmed ? DIM_SCALE : 1;
-      const infoBoost = infoActive ? 1.06 : 1;
-      group.current.scale.setScalar(BASE_SCALE * infoBoost * dimFactor);
-      group.current.position.x = 0;
-      group.current.position.y = 0;
-      group.current.position.z = infoActive ? 0.15 : 0;
-      group.current.rotation.x = 0;
-      group.current.rotation.y = 0;
-    }
-    gl.domElement.style.cursor = "auto";
-  }, [gl, infoActive, dimmed]);
-
-  useEffect(() => {
-    if (!rackHover || sticker.placeholder) return;
-    return rackHover.register(clearHover);
-  }, [rackHover, clearHover, sticker.placeholder]);
-
-  const handlePlaceholderPointer = (e: ThreeEvent<PointerEvent>) => {
-    e.stopPropagation();
-    rackHover?.clearAll();
-    gl.domElement.style.cursor = "default";
-  };
 
   useEffect(() => {
     if (sticker.placeholder) {
@@ -129,7 +92,6 @@ export default function Sticker3D({
     });
   }, [texture]);
 
-  /** Unit vector toward rack center — used to shift position on hover only. */
   const growInward = useMemo((): [number, number] => {
     const [gx, gy] = position;
     const len = Math.hypot(gx, gy);
@@ -143,23 +105,17 @@ export default function Sticker3D({
     onInfoChange(infoActive ? null : sticker);
   };
 
-  const handleStickerClick = (e: ThreeEvent<MouseEvent>) => {
-    e.stopPropagation();
-    if (sticker.placeholder || rackHover?.isHoverLocked()) return;
-    if (pointer.y < BOTTOM_ROW_POINTER_Y) return;
-    if (Math.abs(e.pointer.y - pointer.y) > STALE_POINTER_DELTA) return;
-    if (e.intersections[0]?.object !== e.object) return;
-    punch.current = 0.12;
-    onSelect(sticker);
-  };
-
   useFrame((state, delta) => {
     if (!group.current || sticker.placeholder) return;
-    const t = state.clock.elapsedTime + seed;
-    const hovered = hoveredRef.current;
+
+    const hovered = rackHover?.getHoveredId() === sticker.id;
+    if (rackHover?.consumePunch(sticker.id)) {
+      punch.current = 0.12;
+    }
 
     hoverT.current = THREE.MathUtils.lerp(hoverT.current, hovered ? 1 : 0, delta * 10);
 
+    const t = state.clock.elapsedTime + seed;
     const bob = Math.sin(t * 1.1) * 0.01 * (1 - hoverT.current * 0.8);
     const hoverGrow = hoverT.current * (HOVER_SCALE - 1);
     const inwardShift = STICKER_HALF * hoverGrow;
@@ -206,12 +162,13 @@ export default function Sticker3D({
 
   const slotLabelY = -SLOT_LABEL_OFFSET;
   const htmlDistance = 11.8;
+  const rowZ = (3 - row) * 0.012;
 
   return (
-    <group position={position}>
+    <group position={[position[0], position[1], rowZ]}>
       <group ref={group}>
         {!material && !sticker.placeholder && (
-          <mesh scale={BASE_SCALE}>
+          <mesh scale={BASE_SCALE} raycast={noopRaycast}>
             <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
             <meshBasicMaterial color="#DCCCAC" wireframe transparent opacity={0.5} />
           </mesh>
@@ -222,13 +179,7 @@ export default function Sticker3D({
             <mesh
               position={[0, PLACEHOLDER_CELL_Y, 0.18]}
               renderOrder={30}
-              userData={{ slotCode: sticker.slotCode, kind: "placeholder-blocker" }}
-              onPointerOver={handlePlaceholderPointer}
-              onPointerOut={() => {
-                gl.domElement.style.cursor = "auto";
-              }}
-              onPointerDown={blockPointer}
-              onClick={blockPointer}
+              raycast={noopRaycast}
             >
               <planeGeometry args={[PLACEHOLDER_CELL_W, PLACEHOLDER_CELL_H]} />
               <meshBasicMaterial transparent opacity={0.001} depthWrite depthTest />
@@ -250,24 +201,7 @@ export default function Sticker3D({
         )}
 
         {material && (
-          <mesh
-            ref={meshRef}
-            material={material}
-            userData={{ slotCode: sticker.slotCode, kind: "sticker" }}
-            onPointerOver={(e) => {
-              e.stopPropagation();
-              const stale = Math.abs(e.pointer.y - pointer.y) > STALE_POINTER_DELTA;
-              if (rackHover?.isHoverLocked() || pointer.y < BOTTOM_ROW_POINTER_Y || stale) return;
-              if (e.intersections[0]?.object !== e.object) return;
-              rackHover?.clearAll();
-              hoveredRef.current = true;
-              gl.domElement.style.cursor = "pointer";
-            }}
-            onPointerOut={() => {
-              clearHover();
-            }}
-            onClick={handleStickerClick}
-          >
+          <mesh ref={meshRef} material={material} raycast={noopRaycast}>
             <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
           </mesh>
         )}

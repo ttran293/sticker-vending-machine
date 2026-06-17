@@ -4,71 +4,55 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useMemo,
   useRef,
-  type MutableRefObject,
   type ReactNode,
 } from "react";
-import { BOTTOM_ROW_POINTER_Y } from "@/lib/sticker3dConstants";
-
-type ClearHover = () => void;
+import type { SlotPointerHit } from "@/lib/rackPointer";
 
 type RackHoverContextValue = {
-  register: (clear: ClearHover) => () => void;
-  clearAll: () => void;
-  /** Drive lock from live pointer.y every frame — not per-mesh pointerOut */
-  syncBottomRow: (pointerY: number) => void;
-  isHoverLocked: () => boolean;
+  getHoveredId: () => string | null;
+  applyPointerHit: (hit: SlotPointerHit) => void;
+  clearHover: () => void;
+  triggerPunch: (stickerId: string) => void;
+  consumePunch: (stickerId: string) => boolean;
 };
 
 const RackHoverContext = createContext<RackHoverContextValue | null>(null);
 
-export function RackHoverProvider({
-  children,
-  clearAllRef,
-}: {
-  children: ReactNode;
-  clearAllRef?: MutableRefObject<(() => void) | null>;
-}) {
-  const clearsRef = useRef(new Set<ClearHover>());
-  const bottomRowActiveRef = useRef(false);
+export function RackHoverProvider({ children }: { children: ReactNode }) {
+  const hoveredIdRef = useRef<string | null>(null);
+  const punchIdRef = useRef<string | null>(null);
 
-  const register = useCallback((clear: ClearHover) => {
-    clearsRef.current.add(clear);
-    return () => {
-      clearsRef.current.delete(clear);
-    };
+  const clearHover = useCallback(() => {
+    hoveredIdRef.current = null;
   }, []);
 
-  const clearAll = useCallback(() => {
-    clearsRef.current.forEach((clear) => clear());
+  const applyPointerHit = useCallback((hit: SlotPointerHit) => {
+    hoveredIdRef.current = hit.zone === "sticker" && hit.sticker ? hit.sticker.id : null;
   }, []);
 
-  const syncBottomRow = useCallback(
-    (pointerY: number) => {
-      const inBottom = pointerY < BOTTOM_ROW_POINTER_Y;
-      if (inBottom && !bottomRowActiveRef.current) {
-        clearAll();
-      }
-      bottomRowActiveRef.current = inBottom;
-    },
-    [clearAll],
-  );
+  const triggerPunch = useCallback((stickerId: string) => {
+    punchIdRef.current = stickerId;
+  }, []);
 
-  const isHoverLocked = useCallback(() => bottomRowActiveRef.current, []);
+  const consumePunch = useCallback((stickerId: string) => {
+    if (punchIdRef.current !== stickerId) return false;
+    punchIdRef.current = null;
+    return true;
+  }, []);
 
-  useEffect(() => {
-    if (!clearAllRef) return;
-    clearAllRef.current = clearAll;
-    return () => {
-      clearAllRef.current = null;
-    };
-  }, [clearAll, clearAllRef]);
+  const getHoveredId = useCallback(() => hoveredIdRef.current, []);
 
   const value = useMemo(
-    () => ({ register, clearAll, syncBottomRow, isHoverLocked }),
-    [register, clearAll, syncBottomRow, isHoverLocked],
+    () => ({
+      getHoveredId,
+      applyPointerHit,
+      clearHover,
+      triggerPunch,
+      consumePunch,
+    }),
+    [getHoveredId, applyPointerHit, clearHover, triggerPunch, consumePunch],
   );
 
   return <RackHoverContext.Provider value={value}>{children}</RackHoverContext.Provider>;

@@ -3,20 +3,25 @@
 import { Suspense, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { stickers, GRID_COLS, GRID_ROWS, type Sticker } from "@/data/stickers";
+import { stickers, GRID_COLS, type Sticker } from "@/data/stickers";
 import {
-  GAP_X,
-  GAP_Y,
+  getColCenterLocalX,
   getRackBounds,
+  getRowCenterLocalY,
   RACK_FIT_PADDING,
   RACK_Y_OFFSET,
 } from "@/lib/sticker3dConstants";
+import {
+  buildProjectedSlots,
+  isInsideCanvas,
+  pointerEventToNdc,
+  resolvePointerHit,
+} from "@/lib/rackPointer";
 import Sticker3D from "./Sticker3D";
 import { RackHoverProvider, useRackHover } from "./StickerRackHoverContext";
 
 const CAMERA_FOV = 34;
 
-/** Only framing system — distance from getRackBounds() × RACK_FIT_PADDING. */
 function FitCamera() {
   const { camera, size } = useThree();
 
@@ -46,7 +51,6 @@ type Props = {
 
 function StickerRack({
   infoOpenId,
-  onSelect,
   onInfoChange,
 }: {
   infoOpenId: string | null;
@@ -61,21 +65,18 @@ function StickerRack({
           const index = stickers.indexOf(sticker);
           const col = index % GRID_COLS;
           const row = Math.floor(index / GRID_COLS);
-          const x = (col - (GRID_COLS - 1) / 2) * GAP_X;
-          const y = ((GRID_ROWS - 1) / 2 - row) * GAP_Y;
+          const x = getColCenterLocalX(col);
+          const y = getRowCenterLocalY(row);
           return (
             <Sticker3D
               key={sticker.id}
               sticker={sticker}
+              row={row}
               position={[x, y, 0]}
               seed={index * 1.7}
               infoActive={infoOpenId === sticker.id}
               dimmed={infoOpenId !== null && infoOpenId !== sticker.id}
               onInfoChange={onInfoChange}
-              onSelect={(sticker) => {
-                if (sticker.placeholder) return;
-                onSelect(sticker);
-              }}
             />
           );
         })}
@@ -84,18 +85,15 @@ function StickerRack({
 }
 
 export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Props) {
-  const clearAllRef = useRef<(() => void) | null>(null);
-
   return (
     <Canvas
       camera={{ position: [0, 0, 10], fov: CAMERA_FOV }}
       gl={{ antialias: true, alpha: true }}
       dpr={[1, 2]}
       style={{ width: "100%", height: "100%", display: "block" }}
-      onPointerMissed={() => clearAllRef.current?.()}
     >
-      <RackHoverProvider clearAllRef={clearAllRef}>
-        <RackPointerBridge />
+      <RackHoverProvider>
+        <RackPointerBridge onSelect={onSelect} />
         <FitCamera />
         <ambientLight intensity={1} />
         <Suspense fallback={null}>
@@ -112,21 +110,73 @@ export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Pr
   );
 }
 
-function RackPointerBridge() {
+function RackPointerBridge({ onSelect }: { onSelect: (sticker: Sticker) => void }) {
   const rackHover = useRackHover();
-  const { gl, pointer } = useThree();
+  const { gl, camera } = useThree();
+  const pointerNdc = useRef({ x: 0, y: 0 });
+  const pointerInside = useRef(false);
+  const slotsRef = useRef(buildProjectedSlots(camera));
 
   useFrame(() => {
-    rackHover?.syncBottomRow(pointer.y);
+    if (!rackHover) return;
+
+    slotsRef.current = buildProjectedSlots(camera);
+
+    if (!pointerInside.current) {
+      rackHover.clearHover();
+      gl.domElement.style.cursor = "auto";
+      return;
+    }
+
+    const hit = resolvePointerHit(pointerNdc.current.x, pointerNdc.current.y, slotsRef.current);
+    rackHover.applyPointerHit(hit);
+
+    if (hit.zone === "sticker" || hit.zone === "label") {
+      gl.domElement.style.cursor = "pointer";
+    } else if (hit.zone === "placeholder") {
+      gl.domElement.style.cursor = "default";
+    } else {
+      gl.domElement.style.cursor = "auto";
+    }
   });
 
   useLayoutEffect(() => {
     if (!rackHover) return;
-    const clear = () => rackHover.clearAll();
     const canvas = gl.domElement;
-    canvas.addEventListener("pointerleave", clear);
-    return () => canvas.removeEventListener("pointerleave", clear);
-  }, [rackHover, gl]);
+
+    const updatePointer = (event: PointerEvent) => {
+      pointerInside.current = isInsideCanvas(event, canvas);
+      if (!pointerInside.current) {
+        rackHover.clearHover();
+        return;
+      }
+      const ndc = pointerEventToNdc(event, canvas);
+      pointerNdc.current = ndc;
+    };
+
+    const onDown = (event: PointerEvent) => {
+      if (!isInsideCanvas(event, canvas)) return;
+      const ndc = pointerEventToNdc(event, canvas);
+      const hit = resolvePointerHit(ndc.x, ndc.y, buildProjectedSlots(camera));
+
+      if (hit.zone === "sticker" && hit.sticker && !hit.sticker.placeholder) {
+        rackHover.triggerPunch(hit.sticker.id);
+        onSelect(hit.sticker);
+      }
+    };
+
+    window.addEventListener("pointermove", updatePointer, { passive: true });
+    window.addEventListener("pointerdown", onDown);
+    window.addEventListener("pointerleave", () => {
+      pointerInside.current = false;
+      rackHover.clearHover();
+    });
+
+    return () => {
+      window.removeEventListener("pointermove", updatePointer);
+      window.removeEventListener("pointerdown", onDown);
+    };
+  }, [rackHover, gl, camera, onSelect]);
 
   return null;
 }

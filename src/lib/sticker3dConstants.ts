@@ -9,7 +9,14 @@ export const STICKER_HALF = STICKER_WIDTH * 0.5;
 export const SLOT_LABEL_OFFSET = STICKER_SIZE * BASE_SCALE * 0.52;
 /** Html `[D1]` tag extent below slot center — keep in sync with FitCamera. */
 export const SLOT_LABEL_HEIGHT = 0.62;
+/** globals.css slot labels are 16px (original layout was 9px). */
+export const SLOT_LABEL_HIT_SCALE = 16 / 9;
 export const HOVER_SCALE = 1.18;
+
+/** D-row placeholder mesh — keep in sync with Sticker3D + rackPointer. */
+export const PLACEHOLDER_CELL_W = STICKER_WIDTH * 1.02;
+export const PLACEHOLDER_CELL_H = STICKER_WIDTH + SLOT_LABEL_HEIGHT + 0.14;
+export const PLACEHOLDER_CELL_Y = -(SLOT_LABEL_OFFSET + SLOT_LABEL_HEIGHT) * 0.38;
 
 /** Min center-to-center gap so full hover scale never overlaps neighbors. */
 const HOVER_HALF = STICKER_HALF * HOVER_SCALE;
@@ -30,8 +37,15 @@ export const RACK_FIT_PADDING = 0.94;
 /** Nudge rack up so bottom-row slot labels fit above the green label strip. */
 export const RACK_Y_OFFSET = 0.16;
 
-/** Canvas NDC y — below this is row D */
-export const BOTTOM_ROW_POINTER_Y = -0.15;
+/** Rack-local Y for a row index (0 = A, 3 = D). */
+export function getRowCenterLocalY(row: number) {
+  return ((GRID_ROWS - 1) / 2 - row) * GAP_Y;
+}
+
+/** Rack-local X for a column index (0 = col 1). */
+export function getColCenterLocalX(col: number) {
+  return (col - (GRID_COLS - 1) / 2) * GAP_X;
+}
 
 /** Visible rack extent from center — includes hover scale and slot labels. */
 export function getRackBounds() {
