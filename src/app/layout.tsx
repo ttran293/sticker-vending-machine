@@ -8,8 +8,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Sticker Machine",
+  title: "Sticker Vending Machine",
   description: "Tap the glass, pick your stickers, and check out from this 3D sticker machine.",
+  icons: {
+    icon: "/stickers/music_album/02_thriller_dog.png",
+  },
 };
 
 export default function RootLayout({

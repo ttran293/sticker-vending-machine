@@ -9,6 +9,7 @@ import { applyCoupon, resolveCoupon, type Coupon } from "@/data/coupons";
 import CheckoutModal, { type CartLine } from "./CheckoutModal";
 import StickerPopOut from "./StickerPopOut";
 import SidebarPanel from "./SidebarPanel";
+import MusicPlayer from "./MusicPlayer";
 import type { SitePanelId } from "@/data/sitePanels";
 import { getRackViewportAspect } from "@/lib/sticker3dConstants";
 
@@ -215,10 +216,7 @@ export default function VendingMachine() {
                 you are visitor #{" "}
                 <span className="neo-counter-num">0{((totalItems % 9) + 1) * 47}</span>
               </p>
-              <span className="control-info-kicker">SELECT STICKER</span>
-              <strong>Checkout</strong>
-              <p>Click each sticker label to inspect. 
-                <br />Tap sticker to add it to your cart.</p>
+              <MusicPlayer />
             </div>
 
             <div className="digital-display">
@@ -367,18 +365,20 @@ export default function VendingMachine() {
         </div>
 
         <footer className="machine-footer">
-          made by{" "}
-          <a href="https://thanhnam.dev" target="_blank" rel="noopener noreferrer" className="footer-link">
-            Nam
-          </a>
-          {" · "}
-          <button type="button" className="footer-link" onClick={() => setSidebarPanel("about")}>
-            About
-          </button>
-          {" · "}
-          <button type="button" className="footer-link" onClick={() => setSidebarPanel("faq")}>
-            FAQ
-          </button>
+          <span className="machine-footer-content">
+            made by{" "}
+            <a href="https://thanhnam.dev" target="_blank" rel="noopener noreferrer" className="footer-link">
+              Nam
+            </a>
+            {" · "}
+            <button type="button" className="footer-link" onClick={() => setSidebarPanel("about")}>
+              About
+            </button>
+            {" · "}
+            <button type="button" className="footer-link" onClick={() => setSidebarPanel("faq")}>
+              FAQ
+            </button>
+          </span>
         </footer>
       </div>
 
