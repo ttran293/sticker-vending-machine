@@ -160,8 +160,9 @@ export default function VendingMachine() {
             <div className="marquee-track">
               {Array.from({ length: 2 }).map((_, i) => (
                 <span key={i}>
-                  ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶
-                  HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶&nbsp;
+                  ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶
+                  CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶
+                  HANDMADE STICKERS ✶ CASH OR VENMO ✶&nbsp;
                 </span>
               ))}
             </div>
@@ -172,7 +173,9 @@ export default function VendingMachine() {
           {/* Glass display cabinet with the 3D rack */}
           <div className="glass-cabinet">
             <div className="glass-interior">
-              <div className={`glass-viewport${infoSticker ? " is-info-open" : ""}`}>
+              <div
+                className={`glass-viewport${infoSticker ? " is-info-open" : ""}`}
+              >
                 <div
                   className="glass-viewport-canvas"
                   style={{ aspectRatio: getRackViewportAspect() }}
@@ -196,16 +199,32 @@ export default function VendingMachine() {
                       className="dispensed-sticker"
                       layout
                       initial={{ y: -72, opacity: 0, rotate: -16, scale: 0.35 }}
-                      animate={{ y: 0, opacity: 1, rotate: (index % 5) * 3 - 6, scale: 1 }}
+                      animate={{
+                        y: 0,
+                        opacity: 1,
+                        rotate: (index % 5) * 3 - 6,
+                        scale: 1,
+                      }}
                       exit={{ y: 18, opacity: 0, scale: 0.4, rotate: 12 }}
-                      transition={{ type: "spring", stiffness: 260, damping: 20 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 260,
+                        damping: 20,
+                      }}
                     >
-                      <Image src={item.sticker.image} alt={item.sticker.name} width={48} height={48} />
+                      <Image
+                        src={item.sticker.image}
+                        alt={item.sticker.name}
+                        width={48}
+                        height={48}
+                      />
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
-              <span className="dispenser-label">&gt;&gt; PUSH / COLLECT HERE &lt;&lt;</span>
+              <span className="dispenser-label">
+                &gt;&gt; PUSH / COLLECT HERE &lt;&lt;
+              </span>
             </div>
           </div>
 
@@ -214,7 +233,9 @@ export default function VendingMachine() {
             <div className="control-info-card">
               <p className="neo-counter" aria-hidden>
                 you are visitor #{" "}
-                <span className="neo-counter-num">0{((totalItems % 9) + 1) * 47}</span>
+                <span className="neo-counter-num">
+                  0{((totalItems % 9) + 1) * 47}
+                </span>
               </p>
               <MusicPlayer />
             </div>
@@ -232,7 +253,9 @@ export default function VendingMachine() {
                   {lastPicked ? lastPicked.slotCode : "--"}
                 </motion.span>
               </AnimatePresence>
-              <span className="display-name">{lastPicked ? lastPicked.name : "pick a sticker"}</span>
+              <span className="display-name">
+                {lastPicked ? lastPicked.name : "pick a sticker"}
+              </span>
             </div>
 
             <div className="cart">
@@ -260,21 +283,39 @@ export default function VendingMachine() {
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
-                      transition={{ type: "spring", stiffness: 380, damping: 30 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 380,
+                        damping: 30,
+                      }}
                     >
                       <span className="cart-item-thumb">
-                        <Image src={line.sticker.image} alt={line.sticker.name} width={40} height={40} />
+                        <Image
+                          src={line.sticker.image}
+                          alt={line.sticker.name}
+                          width={40}
+                          height={40}
+                        />
                       </span>
                       <span className="cart-item-info">
                         <strong>{line.sticker.name}</strong>
-                        <small>{line.sticker.note} · ${line.sticker.price.toFixed(2)} ea.</small>
+                        <small>
+                          {line.sticker.note} · ${line.sticker.price.toFixed(2)}{" "}
+                          ea.
+                        </small>
                       </span>
                       <span className="qty-controls">
-                        <button onClick={() => decrement(line.sticker)} aria-label="remove one">
+                        <button
+                          onClick={() => decrement(line.sticker)}
+                          aria-label="remove one"
+                        >
                           &minus;
                         </button>
                         <span>{line.count}</span>
-                        <button onClick={() => add(line.sticker)} aria-label="add one">
+                        <button
+                          onClick={() => add(line.sticker)}
+                          aria-label="add one"
+                        >
                           +
                         </button>
                       </span>
@@ -312,7 +353,11 @@ export default function VendingMachine() {
                         if (e.key === "Enter") handleApplyCoupon();
                       }}
                     />
-                    <button type="button" className="coupon-apply" onClick={handleApplyCoupon}>
+                    <button
+                      type="button"
+                      className="coupon-apply"
+                      onClick={handleApplyCoupon}
+                    >
                       APPLY
                     </button>
                   </div>
@@ -321,7 +366,11 @@ export default function VendingMachine() {
                       <span>
                         {appliedCoupon.code} · {appliedCoupon.label}
                       </span>
-                      <button type="button" className="coupon-remove" onClick={handleRemoveCoupon}>
+                      <button
+                        type="button"
+                        className="coupon-remove"
+                        onClick={handleRemoveCoupon}
+                      >
                         remove
                       </button>
                     </div>
@@ -343,7 +392,11 @@ export default function VendingMachine() {
                 )}
                 <div className="cart-total">
                   <span>TOTAL</span>
-                  <motion.span key={checkoutTotal} initial={{ scale: 1.15 }} animate={{ scale: 1 }}>
+                  <motion.span
+                    key={checkoutTotal}
+                    initial={{ scale: 1.15 }}
+                    animate={{ scale: 1 }}
+                  >
                     ${checkoutTotal.toFixed(2)}
                   </motion.span>
                 </div>
@@ -367,15 +420,26 @@ export default function VendingMachine() {
         <footer className="machine-footer">
           <span className="machine-footer-content">
             made by{" "}
-            <a href="https://thanhnam.dev" target="_blank" rel="noopener noreferrer" className="footer-link">
+            <a
+              href="https://thanhnam.dev"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-link"
+            >
               Nam
             </a>
-            {" · "}
-            <button type="button" className="footer-link" onClick={() => setSidebarPanel("about")}>
+            <button
+              type="button"
+              className="footer-link"
+              onClick={() => setSidebarPanel("about")}
+            >
               About
             </button>
-            {" · "}
-            <button type="button" className="footer-link" onClick={() => setSidebarPanel("faq")}>
+            <button
+              type="button"
+              className="footer-link"
+              onClick={() => setSidebarPanel("faq")}
+            >
               FAQ
             </button>
           </span>
@@ -409,7 +473,11 @@ export default function VendingMachine() {
 
       <AnimatePresence>
         {sidebarPanel && (
-          <SidebarPanel key={sidebarPanel} panel={sidebarPanel} onClose={() => setSidebarPanel(null)} />
+          <SidebarPanel
+            key={sidebarPanel}
+            panel={sidebarPanel}
+            onClose={() => setSidebarPanel(null)}
+          />
         )}
       </AnimatePresence>
 
