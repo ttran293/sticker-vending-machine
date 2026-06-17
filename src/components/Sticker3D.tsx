@@ -15,7 +15,6 @@ type Props = {
   sticker: Sticker;
   position: [number, number, number];
   seed: number;
-  selectedCount: number;
   infoActive: boolean;
   dimmed: boolean;
   onSelect: (sticker: Sticker) => void;
@@ -26,7 +25,6 @@ export default function Sticker3D({
   sticker,
   position,
   seed,
-  selectedCount,
   infoActive,
   dimmed,
   onSelect,
@@ -174,7 +172,7 @@ export default function Sticker3D({
             zIndexRange={[10, 0]}
             pointerEvents="none"
           >
-            <span className="sticker-placeholder-label">coming soon</span>
+            <div className="sticker-placeholder-shape" aria-hidden="true" />
           </Html>
         )}
 
@@ -195,18 +193,6 @@ export default function Sticker3D({
           >
             <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
           </mesh>
-        )}
-
-        {!sticker.placeholder && selectedCount > 0 && (
-          <Html
-            center
-            position={[STICKER_SIZE * 0.38, STICKER_SIZE * 0.38, 0.02]}
-            distanceFactor={htmlDistance}
-            zIndexRange={[20, 0]}
-            pointerEvents="none"
-          >
-            <span className="cart-dot">{selectedCount}</span>
-          </Html>
         )}
 
         {!sticker.placeholder && sticker.saleLabel && (

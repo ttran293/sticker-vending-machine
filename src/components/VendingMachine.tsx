@@ -177,7 +177,6 @@ export default function VendingMachine() {
                   style={{ aspectRatio: getRackViewportAspect() }}
                 >
                   <StickerCanvas
-                    counts={counts}
                     infoOpenId={infoSticker?.id ?? null}
                     onSelect={add}
                     onInfoChange={setInfoSticker}
@@ -240,15 +239,6 @@ export default function VendingMachine() {
             <div className="cart">
               <div className="cart-head">
                 <span>YOUR CART</span>
-                <motion.span
-                  key={totalItems}
-                  className="cart-count"
-                  initial={{ scale: 1.5 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 500, damping: 18 }}
-                >
-                  {totalItems}
-                </motion.span>
               </div>
 
               <ul className="cart-list">

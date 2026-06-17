@@ -172,7 +172,7 @@ export const stickers: Sticker[] = Array.from({ length: GRID_COLS * GRID_ROWS },
   if (!base) {
     return {
       id: `placeholder-${row}-${col}`,
-      name: "COMING SOON",
+      name: "PLACEHOLDER",
       note: "empty slot",
       detail: "More stickers are on the way.",
       price: 0,

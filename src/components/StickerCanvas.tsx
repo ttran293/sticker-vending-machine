@@ -38,19 +38,16 @@ function FitCamera() {
 }
 
 type Props = {
-  counts: Record<string, number>;
   infoOpenId: string | null;
   onSelect: (sticker: Sticker) => void;
   onInfoChange: (sticker: Sticker | null) => void;
 };
 
 function StickerRack({
-  counts,
   infoOpenId,
   onSelect,
   onInfoChange,
 }: {
-  counts: Record<string, number>;
   infoOpenId: string | null;
   onSelect: (sticker: Sticker) => void;
   onInfoChange: (sticker: Sticker | null) => void;
@@ -68,7 +65,6 @@ function StickerRack({
             sticker={sticker}
             position={[x, y, 0]}
             seed={i * 1.7}
-            selectedCount={counts[sticker.id] ?? 0}
             infoActive={infoOpenId === sticker.id}
             dimmed={infoOpenId !== null && infoOpenId !== sticker.id}
             onInfoChange={onInfoChange}
@@ -80,7 +76,7 @@ function StickerRack({
   );
 }
 
-export default function StickerCanvas({ counts, infoOpenId, onSelect, onInfoChange }: Props) {
+export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Props) {
   return (
     <Canvas
       camera={{ position: [0, 0, 10], fov: CAMERA_FOV }}
@@ -93,7 +89,6 @@ export default function StickerCanvas({ counts, infoOpenId, onSelect, onInfoChan
       <Suspense fallback={null}>
         <group position={[0, RACK_Y_OFFSET, 0]}>
           <StickerRack
-            counts={counts}
             infoOpenId={infoOpenId}
             onSelect={onSelect}
             onInfoChange={onInfoChange}
