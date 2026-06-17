@@ -13,27 +13,26 @@ export function createDieCutTexture(img: HTMLImageElement): THREE.CanvasTexture 
   canvas.height = size;
   const ctx = canvas.getContext("2d")!;
 
-  const pad = 28;
+  const transparent = hasTransparentPixels(img);
+  const pad = transparent ? 36 : 92;
   const x = pad;
   const y = pad;
   const w = size - pad * 2;
   const h = size - pad * 2;
-  const radius = 78;
-  const border = 26; // thin white die-cut margin
+  const radius = transparent ? 78 : 64;
+  const border = transparent ? 0 : 14;
 
-  if (hasTransparentPixels(img)) {
+  if (transparent) {
     drawContain(ctx, img, x, y, w, h);
   } else {
-    // White die-cut backing (no soft shadow)
     roundRect(ctx, x, y, w, h, radius);
     ctx.fillStyle = "#ffffff";
     ctx.fill();
 
-    // Artwork clipped inside a slightly smaller rounded rect (leaves the white edge)
     ctx.save();
     roundRect(ctx, x + border, y + border, w - border * 2, h - border * 2, radius - border * 0.6);
     ctx.clip();
-    drawCover(ctx, img, x + border, y + border, w - border * 2, h - border * 2);
+    drawContain(ctx, img, x + border, y + border, w - border * 2, h - border * 2);
     ctx.restore();
   }
 
@@ -74,31 +73,6 @@ function roundRect(
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
-}
-
-/** Draws an image to cover the target rect (center-crop), preserving aspect ratio. */
-function drawCover(
-  ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
-  dx: number,
-  dy: number,
-  dw: number,
-  dh: number,
-) {
-  const ir = img.width / img.height;
-  const tr = dw / dh;
-  let sx = 0;
-  let sy = 0;
-  let sw = img.width;
-  let sh = img.height;
-  if (ir > tr) {
-    sw = img.height * tr;
-    sx = (img.width - sw) / 2;
-  } else {
-    sh = img.width / tr;
-    sy = (img.height - sh) / 2;
-  }
-  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
 }
 
 /** Draws an image fully inside the target rect, preserving transparent edges. */

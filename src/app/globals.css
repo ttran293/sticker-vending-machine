@@ -60,7 +60,6 @@ body {
   font-size: 12px;
   letter-spacing: 2px;
   padding: 6px 0;
-  margin-bottom: 16px;
 }
 
 .marquee-track {
@@ -115,10 +114,11 @@ body {
 /* ---------- Header ---------- */
 .machine-header {
   position: relative;
-  text-align: center;
-  border-bottom: 2px solid var(--line);
-  padding-bottom: 16px;
   margin-bottom: 20px;
+}
+
+.machine-header .marquee {
+  margin-bottom: 0;
 }
 
 .machine-title {
@@ -183,7 +183,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 36px;
-  overflow-x: hidden;
+  overflow: visible;
 }
 
 .glass-interior {
@@ -195,29 +195,30 @@ body {
 .glass-viewport {
   position: relative;
   width: 100%;
-  height: clamp(500px, 62vw, 620px);
-  min-height: 480px;
   background: var(--accent);
   border: 2px solid var(--line);
+  padding-bottom: 28px;
   overflow: hidden;
-  --glass-rack-inset-bottom: 14px;
 }
 
-.glass-viewport > div {
+.glass-viewport-canvas {
+  position: relative;
+  width: 100%;
+}
+
+.glass-viewport-canvas > div {
   position: absolute !important;
-  top: 0 !important;
-  right: 0 !important;
-  bottom: var(--glass-rack-inset-bottom) !important;
-  left: 0 !important;
+  inset: 0 !important;
   width: 100% !important;
-  height: auto !important;
+  height: 100% !important;
+  overflow: visible !important;
 }
 
 .glass-viewport.is-info-open {
   pointer-events: none;
 }
 
-.glass-viewport canvas {
+.glass-viewport-canvas canvas {
   display: block;
   width: 100% !important;
   height: 100% !important;
@@ -225,10 +226,7 @@ body {
 
 .canvas-loading {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: var(--glass-rack-inset-bottom, 0);
-  left: 0;
+  inset: 0;
   z-index: 0;
   display: flex;
   align-items: center;
@@ -355,13 +353,13 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 5px 9px;
+  padding: 4px 8px;
   background: var(--paper);
   border: 1px dashed var(--line);
   color: var(--ink);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 800;
-  letter-spacing: 1.2px;
+  letter-spacing: 1px;
   line-height: 1;
   box-shadow: 2px 2px 0 rgba(84, 107, 65, 0.18);
   text-transform: uppercase;
@@ -376,12 +374,12 @@ body {
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--ink);
-  box-shadow: 2px 2px 0 var(--ink);
-  padding: 3px 7px;
+  box-shadow: 1px 1px 0 var(--ink);
+  padding: 2px 6px;
   font-family: inherit;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 800;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
   line-height: 1;
   cursor: pointer;
   user-select: none;
@@ -608,6 +606,12 @@ body {
   border: 2px solid var(--line);
   box-shadow: 5px 5px 0 var(--ink);
   padding: 14px 16px;
+}
+
+.control-info-card .neo-counter {
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--hair);
 }
 
 .control-info-kicker {
@@ -1351,12 +1355,6 @@ body {
   .page {
     padding: 16px 12px 32px;
   }
-
-  .glass-viewport {
-    height: clamp(360px, 48vh, 560px);
-    min-height: 0;
-    --glass-rack-inset-bottom: 10px;
-  }
 }
 
 /* ---------- Mobile layout ---------- */
@@ -1372,7 +1370,6 @@ body {
   }
 
   .marquee {
-    margin-bottom: 10px;
     font-size: 10px;
   }
 
@@ -1417,11 +1414,6 @@ body {
     width: 100%;
   }
 
-  .glass-viewport {
-    height: clamp(430px, 124vw, 560px);
-    --glass-rack-inset-bottom: 10px;
-  }
-
   .cart-list {
     max-height: min(320px, 42dvh);
   }
@@ -1463,10 +1455,6 @@ body {
   .neo-counter {
     font-size: 9px;
     letter-spacing: 1.4px;
-  }
-
-  .glass-viewport {
-    height: clamp(430px, 132vw, 540px);
   }
 
   .dispenser {
@@ -1572,10 +1560,6 @@ body {
 
   .machine {
     padding: 10px;
-  }
-
-  .glass-viewport {
-    height: 410px;
   }
 
   .control-info-card p {

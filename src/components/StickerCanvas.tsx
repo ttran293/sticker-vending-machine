@@ -1,19 +1,41 @@
 "use client";
 
-import { Suspense } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Suspense, useLayoutEffect } from "react";
+import { Canvas, useThree } from "@react-three/fiber";
+import * as THREE from "three";
 import { stickers, GRID_COLS, GRID_ROWS, type Sticker } from "@/data/stickers";
 import {
   GAP_X,
   GAP_Y,
-  STICKER_HALF,
-  STICKER_WIDTH,
+  getRackBounds,
+  RACK_FIT_PADDING,
+  RACK_Y_OFFSET,
 } from "@/lib/sticker3dConstants";
 import Sticker3D from "./Sticker3D";
 
-const GRID_WIDTH = (GRID_COLS - 1) * GAP_X + STICKER_WIDTH;
-const SHELF_DROP = STICKER_HALF + 0.76;
-const SHELF_THICKNESS = 0.016;
+const CAMERA_FOV = 34;
+
+/** Only framing system — distance from getRackBounds() × RACK_FIT_PADDING. */
+function FitCamera() {
+  const { camera, size } = useThree();
+
+  useLayoutEffect(() => {
+    if (!(camera instanceof THREE.PerspectiveCamera)) return;
+
+    const { halfW, halfH } = getRackBounds();
+    const vFovRad = THREE.MathUtils.degToRad(camera.fov);
+    const aspect = size.width / Math.max(size.height, 1);
+    const hFovRad = 2 * Math.atan(Math.tan(vFovRad / 2) * aspect);
+
+    const distForHeight = (halfH / Math.tan(vFovRad / 2)) * RACK_FIT_PADDING;
+    const distForWidth = (halfW / Math.tan(hFovRad / 2)) * RACK_FIT_PADDING;
+
+    camera.position.set(0, 0, Math.max(distForHeight, distForWidth));
+    camera.updateProjectionMatrix();
+  }, [camera, size.width, size.height]);
+
+  return null;
+}
 
 type Props = {
   counts: Record<string, number>;
@@ -21,23 +43,6 @@ type Props = {
   onSelect: (sticker: Sticker) => void;
   onInfoChange: (sticker: Sticker | null) => void;
 };
-
-function Shelves() {
-  return (
-    <>
-      {Array.from({ length: GRID_ROWS }, (_, row) => {
-        const stickerY = ((GRID_ROWS - 1) / 2 - row) * GAP_Y;
-        const y = stickerY - SHELF_DROP;
-        return (
-          <mesh key={row} position={[0, y, -0.35]} renderOrder={0}>
-            <boxGeometry args={[GRID_WIDTH, SHELF_THICKNESS, 0.01]} />
-            <meshBasicMaterial color="#546B41" depthWrite={false} toneMapped={false} />
-          </mesh>
-        );
-      })}
-    </>
-  );
-}
 
 function StickerRack({
   counts,
@@ -52,7 +57,6 @@ function StickerRack({
 }) {
   return (
     <group>
-      <Shelves />
       {stickers.map((sticker, i) => {
         const col = i % GRID_COLS;
         const row = Math.floor(i / GRID_COLS);
@@ -79,14 +83,15 @@ function StickerRack({
 export default function StickerCanvas({ counts, infoOpenId, onSelect, onInfoChange }: Props) {
   return (
     <Canvas
-      camera={{ position: [0, -0.2, 16.4], fov: 38 }}
+      camera={{ position: [0, 0, 10], fov: CAMERA_FOV }}
       gl={{ antialias: true, alpha: true }}
       dpr={[1, 2]}
       style={{ width: "100%", height: "100%", display: "block" }}
     >
+      <FitCamera />
       <ambientLight intensity={1} />
       <Suspense fallback={null}>
-        <group position={[0, 0.38, 0]}>
+        <group position={[0, RACK_Y_OFFSET, 0]}>
           <StickerRack
             counts={counts}
             infoOpenId={infoOpenId}

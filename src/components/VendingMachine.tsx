@@ -10,6 +10,7 @@ import CheckoutModal, { type CartLine } from "./CheckoutModal";
 import StickerPopOut from "./StickerPopOut";
 import SidebarPanel from "./SidebarPanel";
 import type { SitePanelId } from "@/data/sitePanels";
+import { getRackViewportAspect } from "@/lib/sticker3dConstants";
 
 // R3F relies on browser APIs (WebGL), so render it client-side only.
 const StickerCanvas = dynamic(() => import("./StickerCanvas"), {
@@ -150,25 +151,20 @@ export default function VendingMachine() {
 
   return (
     <div className="machine-stage">
-      <div className="marquee" aria-hidden>
-        <div className="marquee-track">
-          {Array.from({ length: 2 }).map((_, i) => (
-            <span key={i}>
-              ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶
-              HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶&nbsp;
-            </span>
-          ))}
-        </div>
-      </div>
-
       <div className="machine">
         <div className="machine-frame" aria-hidden />
 
         <div className="machine-header">
-          <p className="neo-counter" aria-hidden>
-            you are visitor #{" "}
-            <span className="neo-counter-num">0{((totalItems % 9) + 1) * 47}</span>
-          </p>
+          <div className="marquee" aria-hidden>
+            <div className="marquee-track">
+              {Array.from({ length: 2 }).map((_, i) => (
+                <span key={i}>
+                  ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶
+                  HANDMADE STICKERS ✶ CASH OR VENMO ✶ ✶ HANDMADE STICKERS ✶ CASH OR VENMO ✶&nbsp;
+                </span>
+              ))}
+            </div>
+          </div>
         </div>
 
         <div className="machine-body">
@@ -176,12 +172,17 @@ export default function VendingMachine() {
           <div className="glass-cabinet">
             <div className="glass-interior">
               <div className={`glass-viewport${infoSticker ? " is-info-open" : ""}`}>
-                <StickerCanvas
-                  counts={counts}
-                  infoOpenId={infoSticker?.id ?? null}
-                  onSelect={add}
-                  onInfoChange={setInfoSticker}
-                />
+                <div
+                  className="glass-viewport-canvas"
+                  style={{ aspectRatio: getRackViewportAspect() }}
+                >
+                  <StickerCanvas
+                    counts={counts}
+                    infoOpenId={infoSticker?.id ?? null}
+                    onSelect={add}
+                    onInfoChange={setInfoSticker}
+                  />
+                </div>
               </div>
             </div>
 
@@ -211,6 +212,10 @@ export default function VendingMachine() {
           {/* Control panel */}
           <div className="control-panel">
             <div className="control-info-card">
+              <p className="neo-counter" aria-hidden>
+                you are visitor #{" "}
+                <span className="neo-counter-num">0{((totalItems % 9) + 1) * 47}</span>
+              </p>
               <span className="control-info-kicker">SELECT STICKER</span>
               <strong>Checkout</strong>
               <p>Click each sticker code to see information. Tap sticker to add it to your cart.</p>

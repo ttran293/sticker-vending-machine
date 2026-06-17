@@ -6,9 +6,8 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Sticker } from "@/data/stickers";
 import { createDieCutTexture } from "@/lib/stickerTexture";
-import { BASE_SCALE, STICKER_SIZE } from "@/lib/sticker3dConstants";
+import { BASE_SCALE, HOVER_SCALE, SLOT_LABEL_OFFSET, STICKER_HALF, STICKER_SIZE } from "@/lib/sticker3dConstants";
 
-const HOVER_SCALE = 1.18;
 const HOVER_Z = 0.5;
 const DIM_SCALE = 0.88;
 
@@ -83,6 +82,14 @@ export default function Sticker3D({
     });
   }, [texture]);
 
+  /** Unit vector toward rack center — used to shift position on hover only. */
+  const growInward = useMemo((): [number, number] => {
+    const [gx, gy] = position;
+    const len = Math.hypot(gx, gy);
+    if (len < 0.001) return [0, 0];
+    return [-gx / len, -gy / len];
+  }, [position]);
+
   const handleInfoClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (sticker.placeholder) return;
@@ -103,7 +110,10 @@ export default function Sticker3D({
     hoverT.current = THREE.MathUtils.lerp(hoverT.current, hovered ? 1 : 0, delta * 10);
 
     const bob = Math.sin(t * 1.1) * 0.01 * (1 - hoverT.current * 0.8);
-    group.current.position.y = bob;
+    const hoverGrow = hoverT.current * (HOVER_SCALE - 1);
+    const inwardShift = STICKER_HALF * hoverGrow;
+    group.current.position.x = growInward[0] * inwardShift;
+    group.current.position.y = bob + growInward[1] * inwardShift;
 
     const dimFactor = dimmed ? DIM_SCALE : 1;
     const infoBoost = infoActive ? 1.06 : 1;
@@ -143,7 +153,8 @@ export default function Sticker3D({
     punch.current = THREE.MathUtils.lerp(punch.current, 0, delta * 7);
   });
 
-  const slotLabelY = -STICKER_SIZE * BASE_SCALE * 0.62;
+  const slotLabelY = -SLOT_LABEL_OFFSET;
+  const htmlDistance = 11.8;
 
   return (
     <group position={position}>
@@ -159,7 +170,7 @@ export default function Sticker3D({
           <Html
             center
             position={[0, 0, 0.04]}
-            distanceFactor={13}
+            distanceFactor={htmlDistance}
             zIndexRange={[10, 0]}
             pointerEvents="none"
           >
@@ -190,7 +201,7 @@ export default function Sticker3D({
           <Html
             center
             position={[STICKER_SIZE * 0.38, STICKER_SIZE * 0.38, 0.02]}
-            distanceFactor={13}
+            distanceFactor={htmlDistance}
             zIndexRange={[20, 0]}
             pointerEvents="none"
           >
@@ -202,7 +213,7 @@ export default function Sticker3D({
           <Html
             center
             position={[0, -STICKER_SIZE * 0.54, 0.03]}
-            distanceFactor={13}
+            distanceFactor={htmlDistance}
             zIndexRange={[30, 0]}
             pointerEvents="none"
           >
@@ -214,7 +225,7 @@ export default function Sticker3D({
       <Html
         center
         position={[0, slotLabelY, 0.06]}
-        distanceFactor={13}
+        distanceFactor={htmlDistance}
         zIndexRange={[40, 0]}
         occlude={false}
         pointerEvents={sticker.placeholder ? "none" : "auto"}
