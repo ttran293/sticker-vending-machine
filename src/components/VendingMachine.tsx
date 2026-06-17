@@ -400,6 +400,7 @@ export default function VendingMachine() {
               sticker={infoSticker}
               selectedCount={counts[infoSticker.id] ?? 0}
               onClose={() => setInfoSticker(null)}
+              onAddToCart={() => add(infoSticker)}
             />
           </>
         )}

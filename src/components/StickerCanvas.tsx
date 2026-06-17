@@ -93,7 +93,7 @@ export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Pr
       style={{ width: "100%", height: "100%", display: "block" }}
     >
       <RackHoverProvider>
-        <RackPointerBridge onSelect={onSelect} />
+        <RackPointerBridge onSelect={onSelect} infoOpenId={infoOpenId} />
         <FitCamera />
         <ambientLight intensity={1} />
         <Suspense fallback={null}>
@@ -110,7 +110,13 @@ export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Pr
   );
 }
 
-function RackPointerBridge({ onSelect }: { onSelect: (sticker: Sticker) => void }) {
+function RackPointerBridge({
+  onSelect,
+  infoOpenId,
+}: {
+  onSelect: (sticker: Sticker) => void;
+  infoOpenId: string | null;
+}) {
   const rackHover = useRackHover();
   const { gl, camera } = useThree();
   const pointerNdc = useRef({ x: 0, y: 0 });
@@ -155,6 +161,7 @@ function RackPointerBridge({ onSelect }: { onSelect: (sticker: Sticker) => void 
     };
 
     const onDown = (event: PointerEvent) => {
+      if (infoOpenId) return;
       if (!isInsideCanvas(event, canvas)) return;
       const ndc = pointerEventToNdc(event, canvas);
       const hit = resolvePointerHit(ndc.x, ndc.y, buildProjectedSlots(camera));
@@ -176,7 +183,7 @@ function RackPointerBridge({ onSelect }: { onSelect: (sticker: Sticker) => void 
       window.removeEventListener("pointermove", updatePointer);
       window.removeEventListener("pointerdown", onDown);
     };
-  }, [rackHover, gl, camera, onSelect]);
+  }, [rackHover, gl, camera, onSelect, infoOpenId]);
 
   return null;
 }
