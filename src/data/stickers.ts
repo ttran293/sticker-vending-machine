@@ -153,10 +153,59 @@ const CAT_CLIMB_EXP_CATALOG = [
   },
 ] as const;
 
+const BUTTERCUP_CATALOG = [
+  {
+    slug: "buttercup-bad-hair-day",
+    name: "BAD HAIR DAY",
+    note: "morning mood",
+    detail: "Sleepy Buttercup - blanket burrito and wild hair - about 2-inch laminated vinyl",
+    price: 1,
+    image: "/stickers/buttercup/bad-hair-day.png",
+    transparent: true,
+  },
+  {
+    slug: "buttercup-costume",
+    name: "MONSTER COSTUME",
+    note: "tiny dino rage",
+    detail: "Buttercup in a toothy green monster costume - about 2-inch laminated vinyl",
+    price: 1,
+    image: "/stickers/buttercup/costume.png",
+    transparent: true,
+  },
+  {
+    slug: "buttercup-hello-phone",
+    name: "HELLO, PHONE?",
+    note: "hotline hero",
+    detail: "Buttercup answering a bright red phone - about 2-inch laminated vinyl",
+    price: 1,
+    image: "/stickers/buttercup/hello-phone.png",
+    transparent: true,
+  },
+  {
+    slug: "buttercup-proud",
+    name: "PROUD BUTTERCUP",
+    note: "arms-crossed confidence",
+    detail: "Buttercup serving a proud side-eye pose - about 2-inch laminated vinyl",
+    price: 1,
+    image: "/stickers/buttercup/proud.png",
+    transparent: true,
+  },
+  {
+    slug: "buttercup-wide-eyes",
+    name: "WIDE-EYED BUTTERCUP",
+    note: "innocent mode",
+    detail: "Buttercup with an extra-wide innocent stare - about 2-inch laminated vinyl",
+    price: 1,
+    image: "/stickers/buttercup/wide-eyes.png",
+    transparent: true,
+  },
+] as const;
+
 const CATEGORY_ROWS = [
   MUSIC_ALBUM_CATALOG,
   CAT_CLIMB_CATALOG,
   CAT_CLIMB_EXP_CATALOG,
+  BUTTERCUP_CATALOG,
 ] as const;
 
 const SALE_SLOTS: number[] = [];
