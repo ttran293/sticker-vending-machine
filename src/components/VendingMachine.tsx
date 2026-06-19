@@ -12,6 +12,7 @@ import SidebarPanel from "./SidebarPanel";
 import MusicPlayer from "./MusicPlayer";
 import type { SitePanelId } from "@/data/sitePanels";
 import { getRackViewportAspect } from "@/lib/sticker3dConstants";
+import { getVisitorCount } from "@/lib/visitorCount";
 
 // R3F relies on browser APIs (WebGL), so render it client-side only.
 const StickerCanvas = dynamic(() => import("./StickerCanvas"), {
@@ -35,7 +36,20 @@ export default function VendingMachine() {
   const [couponInput, setCouponInput] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
+  const [visitorCount, setVisitorCount] = useState<number | null>(null);
   const dispenseSeq = useRef(0);
+
+  useEffect(() => {
+    let active = true;
+
+    getVisitorCount().then((count) => {
+      if (active && count !== null) setVisitorCount(count);
+    });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   useEffect(() => {
     if (!infoSticker) return;
@@ -231,10 +245,10 @@ export default function VendingMachine() {
           {/* Control panel */}
           <div className="control-panel">
             <div className="control-info-card">
-              <p className="neo-counter" aria-hidden>
+              <p className="neo-counter">
                 you are visitor #{" "}
                 <span className="neo-counter-num">
-                  0{((totalItems % 9) + 1) * 47}
+                  {visitorCount === null ? "---" : String(visitorCount).padStart(3, "0")}
                 </span>
               </p>
               <MusicPlayer />
