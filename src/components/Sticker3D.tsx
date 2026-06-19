@@ -17,6 +17,7 @@ import {
   STICKER_SIZE,
 } from "@/lib/sticker3dConstants";
 import { useRackHover } from "./StickerRackHoverContext";
+import type { LaminateId } from "@/data/laminates";
 
 const HOVER_Z = 0.5;
 const DIM_SCALE = 0.88;
@@ -29,6 +30,7 @@ type Props = {
   row: number;
   position: [number, number, number];
   seed: number;
+  laminateId: LaminateId;
   infoActive: boolean;
   dimmed: boolean;
   onInfoChange: (sticker: Sticker | null) => void;
@@ -39,17 +41,28 @@ export default function Sticker3D({
   row,
   position,
   seed,
+  laminateId,
   infoActive,
   dimmed,
   onInfoChange,
 }: Props) {
   const group = useRef<THREE.Group>(null);
   const meshRef = useRef<THREE.Mesh>(null);
+  const finishMeshRef = useRef<THREE.Mesh>(null);
   const punch = useRef(0);
   const hoverT = useRef(0);
   const rackHover = useRackHover();
 
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const [reducedMotion, setReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const syncPreference = () => setReducedMotion(query.matches);
+    syncPreference();
+    query.addEventListener("change", syncPreference);
+    return () => query.removeEventListener("change", syncPreference);
+  }, []);
 
   useEffect(() => {
     if (sticker.placeholder) {
@@ -84,13 +97,61 @@ export default function Sticker3D({
     if (!texture) return null;
     return new THREE.MeshBasicMaterial({
       map: texture,
+      color: laminateId === "matte" ? "#e8e2d6" : "#ffffff",
       transparent: true,
       alphaTest: 0.02,
       depthWrite: false,
       depthTest: true,
       toneMapped: false,
     });
-  }, [texture]);
+  }, [laminateId, texture]);
+
+  const finishMaterial = useMemo(() => {
+    if (!texture || laminateId === "matte") return null;
+
+    return new THREE.ShaderMaterial({
+      uniforms: {
+        map: { value: texture },
+        time: { value: 0 },
+        mode: { value: laminateId === "laser-rainbow" ? 1 : 0 },
+        finishOpacity: { value: 1 },
+      },
+      vertexShader: `
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform sampler2D map;
+        uniform float time;
+        uniform float mode;
+        uniform float finishOpacity;
+        varying vec2 vUv;
+
+        void main() {
+          float artAlpha = texture2D(map, vUv).a;
+          if (artAlpha < 0.02) discard;
+
+          float diagonal = vUv.x + vUv.y;
+          if (mode < 0.5) {
+            float band = 1.0 - smoothstep(0.0, 0.18, abs(fract(diagonal + time * 0.055) - 0.5));
+            gl_FragColor = vec4(vec3(1.0), band * 0.12 * artAlpha * finishOpacity);
+          } else {
+            float phase = diagonal * 5.4 + time * 0.35;
+            vec3 rainbow = 0.58 + 0.42 * cos(phase + vec3(0.0, 2.094, 4.188));
+            float sheen = 0.34 + 0.18 * sin((vUv.x - vUv.y) * 9.0 - time * 0.28);
+            gl_FragColor = vec4(rainbow, sheen * artAlpha * finishOpacity);
+          }
+        }
+      `,
+      transparent: true,
+      depthWrite: false,
+      depthTest: true,
+      toneMapped: false,
+    });
+  }, [laminateId, texture]);
 
   const growInward = useMemo((): [number, number] => {
     const [gx, gy] = position;
@@ -156,8 +217,15 @@ export default function Sticker3D({
 
     const mat = meshRef.current?.material;
     if (mat instanceof THREE.MeshBasicMaterial) {
-      const targetOpacity = dimmed ? 0.55 : 1;
+      const finishOpacity = laminateId === "matte" ? 0.9 : 1;
+      const targetOpacity = (dimmed ? 0.55 : 1) * finishOpacity;
       mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOpacity, frameDelta * 10);
+    }
+
+    const finishMat = finishMeshRef.current?.material;
+    if (finishMat instanceof THREE.ShaderMaterial) {
+      finishMat.uniforms.time.value = reducedMotion ? seed : t;
+      finishMat.uniforms.finishOpacity.value = dimmed ? 0.35 : 1;
     }
 
     if (meshRef.current) {
@@ -209,6 +277,18 @@ export default function Sticker3D({
 
         {material && (
           <mesh ref={meshRef} material={material} raycast={noopRaycast}>
+            <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
+          </mesh>
+        )}
+
+        {finishMaterial && (
+          <mesh
+            ref={finishMeshRef}
+            material={finishMaterial}
+            position={[0, 0, 0.012]}
+            renderOrder={10}
+            raycast={noopRaycast}
+          >
             <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />
           </mesh>
         )}

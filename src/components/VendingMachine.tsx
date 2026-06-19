@@ -13,6 +13,15 @@ import MusicPlayer from "./MusicPlayer";
 import type { SitePanelId } from "@/data/sitePanels";
 import { getRackViewportAspect } from "@/lib/sticker3dConstants";
 import { getVisitorCount } from "@/lib/visitorCount";
+import {
+  DEFAULT_LAMINATE_ID,
+  LAMINATES,
+  LAMINATE_IDS,
+  getVariantKey,
+  getVariantPrice,
+  type LaminateId,
+} from "@/data/laminates";
+import { LaminateOverlay, LaminateSwatch } from "./LaminateFinish";
 
 // R3F relies on browser APIs (WebGL), so render it client-side only.
 const StickerCanvas = dynamic(() => import("./StickerCanvas"), {
@@ -23,6 +32,7 @@ const StickerCanvas = dynamic(() => import("./StickerCanvas"), {
 type DispensedItem = {
   key: string;
   sticker: Sticker;
+  laminateId: LaminateId;
 };
 
 export default function VendingMachine() {
@@ -37,6 +47,9 @@ export default function VendingMachine() {
   const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
   const [couponError, setCouponError] = useState<string | null>(null);
   const [visitorCount, setVisitorCount] = useState<number | null>(null);
+  const [selectedFinishes, setSelectedFinishes] = useState<
+    Record<string, LaminateId>
+  >({});
   const dispenseSeq = useRef(0);
 
   useEffect(() => {
@@ -69,22 +82,41 @@ export default function VendingMachine() {
     return () => window.removeEventListener("keydown", onKey);
   }, [sidebarPanel]);
 
-  const add = (sticker: Sticker) => {
+  const getSelectedFinish = (stickerId: string) =>
+    selectedFinishes[stickerId] ?? DEFAULT_LAMINATE_ID;
+
+  const selectFinish = (sticker: Sticker, laminateId: LaminateId) => {
+    setSelectedFinishes((current) => ({
+      ...current,
+      [sticker.id]: laminateId,
+    }));
+  };
+
+  const add = (
+    sticker: Sticker,
+    laminateId: LaminateId = getSelectedFinish(sticker.id),
+  ) => {
     if (sticker.placeholder) return;
+    const variantKey = getVariantKey(sticker.id, laminateId);
     const dispensedItem = {
-      key: `${sticker.id}-${dispenseSeq.current++}`,
+      key: `${variantKey}-${dispenseSeq.current++}`,
       sticker,
+      laminateId,
     };
     setDispensedItems((items) => [dispensedItem, ...items]);
-    setCounts((c) => ({ ...c, [sticker.id]: (c[sticker.id] ?? 0) + 1 }));
+    setCounts((c) => ({ ...c, [variantKey]: (c[variantKey] ?? 0) + 1 }));
+    selectFinish(sticker, laminateId);
     setLastPicked(sticker);
   };
 
-  const decrement = (sticker: Sticker) => {
+  const decrement = (line: CartLine) => {
     setDispensedItems((items) => {
       const next = items.slice();
       for (let i = 0; i < next.length; i += 1) {
-        if (next[i].sticker.id === sticker.id) {
+        if (
+          next[i].sticker.id === line.sticker.id &&
+          next[i].laminateId === line.laminateId
+        ) {
           next.splice(i, 1);
           break;
         }
@@ -93,33 +125,52 @@ export default function VendingMachine() {
     });
     setCounts((c) => {
       const next = { ...c };
-      const v = (next[sticker.id] ?? 0) - 1;
-      if (v <= 0) delete next[sticker.id];
-      else next[sticker.id] = v;
+      const v = (next[line.key] ?? 0) - 1;
+      if (v <= 0) delete next[line.key];
+      else next[line.key] = v;
       return next;
     });
   };
 
-  const removeLine = (sticker: Sticker) => {
-    setDispensedItems((items) => items.filter((item) => item.sticker.id !== sticker.id));
+  const removeLine = (line: CartLine) => {
+    setDispensedItems((items) =>
+      items.filter(
+        (item) =>
+          item.sticker.id !== line.sticker.id ||
+          item.laminateId !== line.laminateId,
+      ),
+    );
     setCounts((c) => {
       const next = { ...c };
-      delete next[sticker.id];
+      delete next[line.key];
       return next;
     });
-    setLastPicked((prev) => (prev?.id === sticker.id ? null : prev));
+    setLastPicked((prev) => (prev?.id === line.sticker.id ? null : prev));
   };
 
   const lines: CartLine[] = useMemo(
     () =>
       stickers
-        .filter((s) => !s.placeholder && counts[s.id])
-        .map((s) => ({ sticker: s, count: counts[s.id] })),
+        .filter((sticker) => !sticker.placeholder)
+        .flatMap((sticker) =>
+          LAMINATE_IDS.flatMap((laminateId) => {
+            const key = getVariantKey(sticker.id, laminateId);
+            const count = counts[key] ?? 0;
+            return count > 0
+              ? [{ key, sticker, laminateId, count }]
+              : [];
+          }),
+        ),
     [counts],
   );
 
   const totalItems = lines.reduce((n, l) => n + l.count, 0);
-  const totalPrice = lines.reduce((sum, l) => sum + l.sticker.price * l.count, 0);
+  const totalPrice = lines.reduce(
+    (sum, line) =>
+      sum +
+      getVariantPrice(line.sticker.price, line.laminateId) * line.count,
+    0,
+  );
   const { discount, total: checkoutTotal } = useMemo(
     () => applyCoupon(totalPrice, appliedCoupon),
     [totalPrice, appliedCoupon],
@@ -196,6 +247,7 @@ export default function VendingMachine() {
                 >
                   <StickerCanvas
                     infoOpenId={infoSticker?.id ?? null}
+                    laminateBySticker={selectedFinishes}
                     onSelect={add}
                     onInfoChange={setInfoSticker}
                   />
@@ -226,12 +278,18 @@ export default function VendingMachine() {
                         damping: 20,
                       }}
                     >
-                      <Image
-                        src={item.sticker.image}
-                        alt={item.sticker.name}
-                        width={48}
-                        height={48}
-                      />
+                      <span className="dispensed-sticker-art">
+                        <Image
+                          src={item.sticker.image}
+                          alt={item.sticker.name}
+                          width={48}
+                          height={48}
+                        />
+                        <LaminateOverlay
+                          laminateId={item.laminateId}
+                          image={item.sticker.image}
+                        />
+                      </span>
                     </motion.div>
                   ))}
                 </AnimatePresence>
@@ -292,7 +350,7 @@ export default function VendingMachine() {
                   )}
                   {lines.map((line) => (
                     <motion.li
-                      key={line.sticker.id}
+                      key={line.key}
                       className="cart-item"
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -310,24 +368,38 @@ export default function VendingMachine() {
                           width={40}
                           height={40}
                         />
+                        <LaminateOverlay
+                          laminateId={line.laminateId}
+                          image={line.sticker.image}
+                        />
                       </span>
                       <span className="cart-item-info">
                         <strong>{line.sticker.name}</strong>
                         <small>
-                          {line.sticker.note} · ${line.sticker.price.toFixed(2)}{" "}
-                          ea.
+                          <span className="cart-item-finish">
+                            <LaminateSwatch laminateId={line.laminateId} />
+                            {LAMINATES[line.laminateId].label}
+                          </span>
+                          <span className="cart-item-unit-price">
+                            $
+                            {getVariantPrice(
+                              line.sticker.price,
+                              line.laminateId,
+                            ).toFixed(2)}{" "}
+                            ea.
+                          </span>
                         </small>
                       </span>
                       <span className="qty-controls">
                         <button
-                          onClick={() => decrement(line.sticker)}
+                          onClick={() => decrement(line)}
                           aria-label="remove one"
                         >
                           &minus;
                         </button>
                         <span>{line.count}</span>
                         <button
-                          onClick={() => add(line.sticker)}
+                          onClick={() => add(line.sticker, line.laminateId)}
                           aria-label="add one"
                         >
                           +
@@ -336,8 +408,8 @@ export default function VendingMachine() {
                       <button
                         type="button"
                         className="cart-item-remove"
-                        onClick={() => removeLine(line.sticker)}
-                        aria-label={`Remove all ${line.sticker.name} from cart`}
+                        onClick={() => removeLine(line)}
+                        aria-label={`Remove all ${line.sticker.name} in ${LAMINATES[line.laminateId].label} from cart`}
                         title="Remove row"
                       >
                         &times;
@@ -477,9 +549,20 @@ export default function VendingMachine() {
             <StickerPopOut
               key={infoSticker.id}
               sticker={infoSticker}
-              selectedCount={counts[infoSticker.id] ?? 0}
+              laminateId={getSelectedFinish(infoSticker.id)}
+              selectedCount={
+                counts[
+                  getVariantKey(
+                    infoSticker.id,
+                    getSelectedFinish(infoSticker.id),
+                  )
+                ] ?? 0
+              }
+              onLaminateChange={(laminateId) =>
+                selectFinish(infoSticker, laminateId)
+              }
               onClose={() => setInfoSticker(null)}
-              onAddToCart={() => add(infoSticker)}
+              onAddToCart={(laminateId) => add(infoSticker, laminateId)}
             />
           </>
         )}

@@ -19,6 +19,10 @@ import {
 } from "@/lib/rackPointer";
 import Sticker3D from "./Sticker3D";
 import { RackHoverProvider, useRackHover } from "./StickerRackHoverContext";
+import {
+  DEFAULT_LAMINATE_ID,
+  type LaminateId,
+} from "@/data/laminates";
 
 const CAMERA_FOV = 34;
 
@@ -45,15 +49,18 @@ function FitCamera() {
 
 type Props = {
   infoOpenId: string | null;
+  laminateBySticker: Record<string, LaminateId>;
   onSelect: (sticker: Sticker) => void;
   onInfoChange: (sticker: Sticker | null) => void;
 };
 
 function StickerRack({
   infoOpenId,
+  laminateBySticker,
   onInfoChange,
 }: {
   infoOpenId: string | null;
+  laminateBySticker: Record<string, LaminateId>;
   onSelect: (sticker: Sticker) => void;
   onInfoChange: (sticker: Sticker | null) => void;
 }) {
@@ -74,6 +81,9 @@ function StickerRack({
               row={row}
               position={[x, y, 0]}
               seed={index * 1.7}
+              laminateId={
+                laminateBySticker[sticker.id] ?? DEFAULT_LAMINATE_ID
+              }
               infoActive={infoOpenId === sticker.id}
               dimmed={infoOpenId !== null && infoOpenId !== sticker.id}
               onInfoChange={onInfoChange}
@@ -84,7 +94,12 @@ function StickerRack({
   );
 }
 
-export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Props) {
+export default function StickerCanvas({
+  infoOpenId,
+  laminateBySticker,
+  onSelect,
+  onInfoChange,
+}: Props) {
   return (
     <Canvas
       camera={{ position: [0, 0, 10], fov: CAMERA_FOV }}
@@ -100,6 +115,7 @@ export default function StickerCanvas({ infoOpenId, onSelect, onInfoChange }: Pr
           <group position={[0, RACK_Y_OFFSET, 0]}>
             <StickerRack
               infoOpenId={infoOpenId}
+              laminateBySticker={laminateBySticker}
               onSelect={onSelect}
               onInfoChange={onInfoChange}
             />

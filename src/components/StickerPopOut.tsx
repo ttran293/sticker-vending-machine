@@ -3,12 +3,19 @@
 import Image from "next/image";
 import {
   motion,
+  useReducedMotion,
   useMotionValue,
   useSpring,
   useTransform,
 } from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Sticker } from "@/data/stickers";
+import {
+  LAMINATES,
+  LAMINATE_IDS,
+  type LaminateId,
+} from "@/data/laminates";
+import { LaminateSwatch } from "./LaminateFinish";
 
 const MAX_TILT_Y = 22;
 const MAX_TILT_X = 16;
@@ -43,9 +50,10 @@ function getContainFrame(
 
 type HeroProps = {
   sticker: Sticker;
+  laminateId: LaminateId;
 };
 
-function StickerPopOutHero({ sticker }: HeroProps) {
+function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
   const stageRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
@@ -53,6 +61,7 @@ function StickerPopOutHero({ sticker }: HeroProps) {
   const pointerX = useMotionValue(0);
   const pointerY = useMotionValue(0);
   const isActive = useMotionValue(0);
+  const reducedMotion = useReducedMotion();
 
   const rotateY = useSpring(useTransform(pointerX, [-0.5, 0.5], [-MAX_TILT_Y, MAX_TILT_Y]), {
     stiffness: 260,
@@ -66,7 +75,13 @@ function StickerPopOutHero({ sticker }: HeroProps) {
     stiffness: 280,
     damping: 26,
   });
-  const shineOpacity = useSpring(useTransform(isActive, [0, 1], [0, 0.42]), {
+  const overlayOpacity =
+    laminateId === "laser-rainbow"
+      ? [0.34, 0.72]
+      : laminateId === "matte"
+        ? [0.1, 0.2]
+        : [0.05, 0.42];
+  const shineOpacity = useSpring(useTransform(isActive, [0, 1], overlayOpacity), {
     stiffness: 300,
     damping: 30,
   });
@@ -123,6 +138,7 @@ function StickerPopOutHero({ sticker }: HeroProps) {
   }, [pointerX, pointerY, isActive]);
 
   const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (reducedMotion) return;
     isActive.set(1);
     updatePointer(e.clientX, e.clientY);
   };
@@ -135,7 +151,7 @@ function StickerPopOutHero({ sticker }: HeroProps) {
     <div
       className={`sticker-popout-hero sticker-popout-panel${
         sticker.transparent ? " sticker-popout-hero--transparent" : ""
-      }`}
+      } sticker-popout-hero--${laminateId}`}
     >
       <motion.div
         key={sticker.id}
@@ -151,16 +167,22 @@ function StickerPopOutHero({ sticker }: HeroProps) {
           onPointerMove={handlePointerMove}
           onPointerLeave={handlePointerLeave}
           onPointerDown={(e) => {
+            if (reducedMotion) return;
             isActive.set(1);
             updatePointer(e.clientX, e.clientY);
             e.currentTarget.setPointerCapture(e.pointerId);
           }}
           onPointerUp={(e) => {
-            e.currentTarget.releasePointerCapture(e.pointerId);
+            if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+              e.currentTarget.releasePointerCapture(e.pointerId);
+            }
             if (e.pointerType === "touch") resetTilt();
           }}
         >
-          <div ref={surfaceRef} className="sticker-popout-hero-surface">
+          <div
+            ref={surfaceRef}
+            className={`sticker-popout-hero-surface laminate-surface--${laminateId}`}
+          >
             <Image
               src={sticker.image}
               alt={sticker.name}
@@ -182,7 +204,7 @@ function StickerPopOutHero({ sticker }: HeroProps) {
                 }}
               >
                 <motion.span
-                  className="sticker-popout-hero-shine"
+                  className={`sticker-popout-hero-shine sticker-popout-hero-shine--${laminateId}`}
                   aria-hidden="true"
                   style={{
                     opacity: shineOpacity,
@@ -202,12 +224,21 @@ function StickerPopOutHero({ sticker }: HeroProps) {
 
 type Props = {
   sticker: Sticker;
+  laminateId: LaminateId;
   selectedCount: number;
   onClose: () => void;
-  onAddToCart: () => void;
+  onLaminateChange: (laminateId: LaminateId) => void;
+  onAddToCart: (laminateId: LaminateId) => void;
 };
 
-export default function StickerPopOut({ sticker, selectedCount, onClose, onAddToCart }: Props) {
+export default function StickerPopOut({
+  sticker,
+  laminateId,
+  selectedCount,
+  onClose,
+  onLaminateChange,
+  onAddToCart,
+}: Props) {
   return (
     <motion.div
       className="sticker-popout-layer"
@@ -225,7 +256,7 @@ export default function StickerPopOut({ sticker, selectedCount, onClose, onAddTo
         onClick={(e) => e.stopPropagation()}
       >
         <div className="sticker-popout-body">
-          <StickerPopOutHero sticker={sticker} />
+          <StickerPopOutHero sticker={sticker} laminateId={laminateId} />
 
           <div className="sticker-info-card sticker-popout-panel">
             <div className="sticker-info-head">
@@ -248,6 +279,30 @@ export default function StickerPopOut({ sticker, selectedCount, onClose, onAddTo
             <h3 className="sticker-info-name">{sticker.name}</h3>
             <p className="sticker-info-note">{sticker.note}</p>
             <p className="sticker-info-detail">{sticker.detail}</p>
+            <fieldset className="laminate-picker">
+              <legend>Laminate finish</legend>
+              <div className="laminate-options">
+                {LAMINATE_IDS.map((id) => {
+                  const laminate = LAMINATES[id];
+                  const selected = laminateId === id;
+                  return (
+                    <button
+                      key={id}
+                      type="button"
+                      className={`laminate-option${selected ? " is-selected" : ""}`}
+                      aria-pressed={selected}
+                      onClick={() => onLaminateChange(id)}
+                    >
+                      <LaminateSwatch laminateId={id} />
+                      <span>{laminate.shortLabel}</span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="laminate-description">
+                {LAMINATES[laminateId].description}
+              </p>
+            </fieldset>
             <div className="sticker-info-footer">
               <span className="sticker-info-price">${sticker.price.toFixed(2)}</span>
               <button
@@ -255,7 +310,7 @@ export default function StickerPopOut({ sticker, selectedCount, onClose, onAddTo
                 className="sticker-btn sticker-popout-add-btn"
                 onClick={(e) => {
                   e.stopPropagation();
-                  onAddToCart();
+                  onAddToCart(laminateId);
                 }}
               >
                 Add to cart

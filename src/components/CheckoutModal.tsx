@@ -5,8 +5,19 @@ import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import type { Coupon } from "@/data/coupons";
 import type { Sticker } from "@/data/stickers";
+import {
+  LAMINATES,
+  getVariantPrice,
+  type LaminateId,
+} from "@/data/laminates";
+import { LaminateOverlay, LaminateSwatch } from "./LaminateFinish";
 
-export type CartLine = { sticker: Sticker; count: number };
+export type CartLine = {
+  key: string;
+  sticker: Sticker;
+  laminateId: LaminateId;
+  count: number;
+};
 
 const ORDER_EMAIL = "thanhnamtran997@gmail.com";
 const PAYMENT_METHODS = ["Cash", "Venmo"] as const;
@@ -44,12 +55,12 @@ export default function CheckoutModal({
 
   const handlePaymentSelect = (method: PaymentMethod) => {
     const orderLines = lines
-      .map(
-        (line) =>
-          `- ${line.sticker.name} x${line.count} · $${line.sticker.price.toFixed(2)} each = $${(
-            line.sticker.price * line.count
-          ).toFixed(2)}`,
-      )
+      .map((line) => {
+        const unitPrice = getVariantPrice(line.sticker.price, line.laminateId);
+        return `- ${line.sticker.name} - ${LAMINATES[line.laminateId].label} x${line.count} · $${unitPrice.toFixed(2)} each = $${(
+          unitPrice * line.count
+        ).toFixed(2)}`;
+      })
       .join("\n");
 
     const body = [
@@ -122,19 +133,29 @@ export default function CheckoutModal({
                 <h2 className="modal-title">{"// YOUR ORDER"}</h2>
                 <ul className="checkout-list">
                   {lines.map((line) => (
-                    <li key={line.sticker.id}>
+                    <li key={line.key}>
                       <span className="checkout-thumb">
                         <Image src={line.sticker.image} alt={line.sticker.name} width={44} height={44} />
+                        <LaminateOverlay
+                          laminateId={line.laminateId}
+                          image={line.sticker.image}
+                        />
                       </span>
                       <span className="checkout-name">
                         {line.sticker.name}
                         <small>
-                          {line.sticker.note} · ${line.sticker.price.toFixed(2)}
+                          <LaminateSwatch laminateId={line.laminateId} />
+                          {LAMINATES[line.laminateId].label} · $
+                          {getVariantPrice(line.sticker.price, line.laminateId).toFixed(2)}
                         </small>
                       </span>
                       <span className="checkout-qty">x{line.count}</span>
                       <span className="checkout-line-total">
-                        ${(line.sticker.price * line.count).toFixed(2)}
+                        $
+                        {(
+                          getVariantPrice(line.sticker.price, line.laminateId) *
+                          line.count
+                        ).toFixed(2)}
                       </span>
                     </li>
                   ))}
