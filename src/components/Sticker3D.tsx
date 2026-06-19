@@ -108,12 +108,19 @@ export default function Sticker3D({
   useFrame((state, delta) => {
     if (!group.current || sticker.placeholder) return;
 
+    // Browsers throttle inactive tabs. Clamp the first frame after returning so
+    // lerp factors cannot overshoot and fling the stickers around.
+    const frameDelta = Math.min(delta, 1 / 30);
     const hovered = rackHover?.getHoveredId() === sticker.id;
     if (rackHover?.consumePunch(sticker.id)) {
       punch.current = 0.12;
     }
 
-    hoverT.current = THREE.MathUtils.lerp(hoverT.current, hovered ? 1 : 0, delta * 10);
+    hoverT.current = THREE.MathUtils.lerp(
+      hoverT.current,
+      hovered ? 1 : 0,
+      frameDelta * 10,
+    );
 
     const t = state.clock.elapsedTime + seed;
     const bob = Math.sin(t * 1.1) * 0.01 * (1 - hoverT.current * 0.8);
@@ -127,37 +134,37 @@ export default function Sticker3D({
     const targetScale =
       BASE_SCALE * infoBoost * (1 + hoverT.current * (HOVER_SCALE - 1)) * dimFactor + punch.current;
     group.current.scale.setScalar(
-      THREE.MathUtils.lerp(group.current.scale.x, targetScale, delta * 12),
+      THREE.MathUtils.lerp(group.current.scale.x, targetScale, frameDelta * 12),
     );
 
     group.current.position.z = THREE.MathUtils.lerp(
       group.current.position.z,
       hoverT.current * HOVER_Z + (infoActive ? 0.15 : 0),
-      delta * 10,
+      frameDelta * 10,
     );
 
     group.current.rotation.y = THREE.MathUtils.lerp(
       group.current.rotation.y,
       Math.sin(t * 0.7) * 0.04 * (1 - hoverT.current * 0.7),
-      delta * 8,
+      frameDelta * 8,
     );
     group.current.rotation.x = THREE.MathUtils.lerp(
       group.current.rotation.x,
       -hoverT.current * 0.03,
-      delta * 8,
+      frameDelta * 8,
     );
 
     const mat = meshRef.current?.material;
     if (mat instanceof THREE.MeshBasicMaterial) {
       const targetOpacity = dimmed ? 0.55 : 1;
-      mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOpacity, delta * 10);
+      mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOpacity, frameDelta * 10);
     }
 
     if (meshRef.current) {
       meshRef.current.renderOrder = hovered || infoActive ? 20 : 5;
     }
 
-    punch.current = THREE.MathUtils.lerp(punch.current, 0, delta * 7);
+    punch.current = THREE.MathUtils.lerp(punch.current, 0, frameDelta * 7);
   });
 
   const slotLabelY = -SLOT_LABEL_OFFSET;
