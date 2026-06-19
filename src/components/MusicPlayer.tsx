@@ -93,8 +93,9 @@ function VolumeIcon() {
 
 export default function MusicPlayer() {
   const audioRef = useRef<HTMLAudioElement>(null);
+  const hasStartedRef = useRef(false);
   const [songIndex, setSongIndex] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   const [volume, setVolume] = useState(0.45);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
@@ -128,6 +129,29 @@ export default function MusicPlayer() {
 
     play();
   }, [songIndex, isPlaying]);
+
+  useEffect(() => {
+    const startOnInteraction = async () => {
+      const audio = audioRef.current;
+      if (!audio || hasStartedRef.current || !audio.paused) return;
+
+      try {
+        await audio.play();
+        hasStartedRef.current = true;
+        setIsPlaying(true);
+      } catch {
+        setIsPlaying(false);
+      }
+    };
+
+    window.addEventListener("pointerdown", startOnInteraction, { once: true });
+    window.addEventListener("keydown", startOnInteraction, { once: true });
+
+    return () => {
+      window.removeEventListener("pointerdown", startOnInteraction);
+      window.removeEventListener("keydown", startOnInteraction);
+    };
+  }, []);
 
   const playCurrent = async () => {
     const audio = audioRef.current;
@@ -173,6 +197,7 @@ export default function MusicPlayer() {
       <audio
         ref={audioRef}
         src={song.src}
+        autoPlay
         preload="metadata"
         onTimeUpdate={(e) => {
           setCurrentTime(e.currentTarget.currentTime);
@@ -182,9 +207,17 @@ export default function MusicPlayer() {
         onLoadedData={(e) => syncDuration(e.currentTarget)}
         onDurationChange={(e) => syncDuration(e.currentTarget)}
         onCanPlay={(e) => syncDuration(e.currentTarget)}
-        onEnded={() => goToSong(songIndex + 1)}
-        onPlay={() => setIsPlaying(true)}
-        onPause={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(true);
+          goToSong(songIndex + 1);
+        }}
+        onPlay={() => {
+          hasStartedRef.current = true;
+          setIsPlaying(true);
+        }}
+        onPause={(e) => {
+          if (!e.currentTarget.ended) setIsPlaying(false);
+        }}
       />
 
       <div className="music-row">
