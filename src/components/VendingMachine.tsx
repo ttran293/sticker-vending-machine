@@ -524,6 +524,13 @@ export default function VendingMachine() {
             <button
               type="button"
               className="footer-link"
+              onClick={() => setSidebarPanel("offTheRack")}
+            >
+              Off the Rack
+            </button>
+            <button
+              type="button"
+              className="footer-link"
               onClick={() => setSidebarPanel("faq")}
             >
               FAQ

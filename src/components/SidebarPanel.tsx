@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { SITE_PANELS, type SitePanelId } from "@/data/sitePanels";
 
@@ -24,7 +25,7 @@ export default function SidebarPanel({ panel, onClose }: Props) {
         onClick={onClose}
       />
       <motion.aside
-        className="sidebar-panel"
+        className={`sidebar-panel${panel === "offTheRack" ? " sidebar-panel--gallery" : ""}`}
         role="dialog"
         aria-modal="true"
         aria-labelledby="sidebar-panel-title"
@@ -57,6 +58,22 @@ export default function SidebarPanel({ panel, onClose }: Props) {
               <p className="sidebar-faq-a">{item.a}</p>
             </div>
           ))}
+
+          {content.photos && (
+            <div className="sidebar-photo-grid">
+              {content.photos.map((photo) => (
+                <figure key={photo.image} className="sidebar-photo-cell">
+                  <Image
+                    src={photo.image}
+                    alt={photo.alt}
+                    fill
+                    className="sidebar-photo-img"
+                    sizes="(max-width: 560px) 44vw, 200px"
+                  />
+                </figure>
+              ))}
+            </div>
+          )}
         </div>
       </motion.aside>
     </>

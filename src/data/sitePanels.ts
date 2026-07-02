@@ -1,8 +1,13 @@
-export type SitePanelId = "about" | "faq";
+export type SitePanelId = "about" | "offTheRack" | "faq";
 
 type FaqItem = {
   q: string;
   a: string;
+};
+
+type SpotPhoto = {
+  image: string;
+  alt: string;
 };
 
 type SitePanel = {
@@ -10,6 +15,7 @@ type SitePanel = {
   intro?: string;
   paragraphs?: string[];
   faq?: FaqItem[];
+  photos?: SpotPhoto[];
 };
 
 export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
@@ -19,6 +25,19 @@ export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
       "This is a small side hustle and hobby project. Mostly, I just want to make fun stickers for my friends and build a little vending machine around them.",
       "A lot of the ideas start from animal images I find online. I edit and remix them with AI tools until they feel cute, weird, or funny enough to become a sticker.",
       "The physical stickers are made by me with a Cricut machine, so each design goes from digital edit to something I can cut, peel, and share.",
+    ],
+  },
+  offTheRack: {
+    title: "OFF THE RACK",
+    photos: [
+      {
+        image: "/img_review/alan_pic1.jpg",
+        alt: "Sticker in use",
+      },
+      {
+        image: "/img_review/alan_pic2.jpg",
+        alt: "Sticker in use",
+      },
     ],
   },
   faq: {

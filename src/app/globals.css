@@ -1586,6 +1586,10 @@ body {
   overflow: hidden;
 }
 
+.sidebar-panel--gallery {
+  width: min(680px, 94vw);
+}
+
 .sidebar-head {
   display: flex;
   align-items: center;
@@ -1668,6 +1672,32 @@ body {
   font-size: 13px;
   line-height: 1.55;
   color: var(--muted);
+}
+
+.sidebar-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.sidebar-photo-cell {
+  position: relative;
+  margin: 0;
+  aspect-ratio: 1;
+  overflow: hidden;
+  border: 2px solid var(--line);
+  box-shadow: 3px 3px 0 var(--ink);
+  background: var(--paper);
+}
+
+.sidebar-photo-img {
+  object-fit: cover;
+}
+
+@media (max-width: 560px) {
+  .sidebar-photo-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ---------- Checkout modal ---------- */
@@ -2011,6 +2041,10 @@ body {
 
   .sidebar-panel {
     width: min(100vw, 420px);
+  }
+
+  .sidebar-panel--gallery {
+    width: min(100vw, 680px);
   }
 }
 
