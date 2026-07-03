@@ -10,6 +10,7 @@ import CheckoutModal, { type CartLine } from "./CheckoutModal";
 import StickerPopOut from "./StickerPopOut";
 import SidebarPanel from "./SidebarPanel";
 import MusicPlayer from "./MusicPlayer";
+import LoginControl from "./LoginControl";
 import type { SitePanelId } from "@/data/sitePanels";
 import { getRackViewportAspect } from "@/lib/sticker3dConstants";
 import { getVisitorCount } from "@/lib/visitorCount";
@@ -535,6 +536,7 @@ export default function VendingMachine() {
             >
               FAQ
             </button>
+            <LoginControl />
           </span>
         </footer>
       </div>
