@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
@@ -28,6 +29,7 @@ function StickerCatalogCard({
   onAssign: () => void;
   priorityLoad?: boolean;
 }) {
+  const { src: imageUrl, onError: onImageError } = useStickerImageWithFallback(entry.image);
   const inMachine = slotCode !== null;
 
   return (
@@ -36,13 +38,14 @@ function StickerCatalogCard({
         className={`catalog-card-art${entry.transparent ? " catalog-card-art--transparent" : ""}`}
       >
         <Image
-          src={entry.image}
+          src={imageUrl}
           alt={entry.name}
           fill
           sizes="(max-width: 640px) 42vw, 180px"
           className="catalog-card-img"
           priority={priorityLoad}
           loading={priorityLoad ? "eager" : "lazy"}
+          onError={onImageError}
         />
       </div>
       <div className="catalog-card-body">

@@ -1,4 +1,5 @@
 import { GRID_COLS, GRID_ROWS } from "@/data/stickers";
+import { isStickerPath, normalizeStickerPath } from "@/lib/s3/stickerAssets";
 
 export type MachineLayout = (string | null)[];
 
@@ -33,8 +34,8 @@ export function normalizeLayout(raw: unknown): MachineLayout | null {
 
   return slots.map((value) => {
     if (value === null || value === undefined || value === "") return null;
-    if (typeof value !== "string" || !value.startsWith("/stickers/")) return null;
-    return value;
+    if (typeof value !== "string" || !isStickerPath(value)) return null;
+    return normalizeStickerPath(value);
   });
 }
 
@@ -45,10 +46,10 @@ export function sanitizeLayout(layout: MachineLayout): MachineLayout {
 
   return layout.map((value) => {
     if (value === null || value === undefined || value === "") return null;
-    if (typeof value !== "string" || !value.startsWith("/stickers/")) {
+    if (typeof value !== "string" || !isStickerPath(value)) {
       throw new Error(`Invalid sticker path: ${String(value)}`);
     }
-    return value;
+    return normalizeStickerPath(value);
   });
 }
 

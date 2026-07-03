@@ -23,6 +23,7 @@ import {
   type LaminateId,
 } from "@/data/laminates";
 import { LaminateOverlay, LaminateSwatch } from "./LaminateFinish";
+import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 
 // R3F relies on browser APIs (WebGL), so render it client-side only.
 const StickerCanvas = dynamic(() => import("./StickerCanvas"), {
@@ -35,6 +36,29 @@ type DispensedItem = {
   sticker: Sticker;
   laminateId: LaminateId;
 };
+
+function StickerThumb({
+  imagePath,
+  alt,
+  width,
+  height,
+  laminateId,
+}: {
+  imagePath: string;
+  alt: string;
+  width: number;
+  height: number;
+  laminateId: LaminateId;
+}) {
+  const { src, onError } = useStickerImageWithFallback(imagePath);
+
+  return (
+    <>
+      <Image src={src} alt={alt} width={width} height={height} onError={onError} />
+      <LaminateOverlay laminateId={laminateId} image={src} />
+    </>
+  );
+}
 
 export default function VendingMachine({ stickers }: { stickers: Sticker[] }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -281,15 +305,12 @@ export default function VendingMachine({ stickers }: { stickers: Sticker[] }) {
                       }}
                     >
                       <span className="dispensed-sticker-art">
-                        <Image
-                          src={item.sticker.image}
+                        <StickerThumb
+                          imagePath={item.sticker.image}
                           alt={item.sticker.name}
                           width={48}
                           height={48}
-                        />
-                        <LaminateOverlay
                           laminateId={item.laminateId}
-                          image={item.sticker.image}
                         />
                       </span>
                     </motion.div>
@@ -364,15 +385,12 @@ export default function VendingMachine({ stickers }: { stickers: Sticker[] }) {
                       }}
                     >
                       <span className="cart-item-thumb">
-                        <Image
-                          src={line.sticker.image}
+                        <StickerThumb
+                          imagePath={line.sticker.image}
                           alt={line.sticker.name}
                           width={40}
                           height={40}
-                        />
-                        <LaminateOverlay
                           laminateId={line.laminateId}
-                          image={line.sticker.image}
                         />
                       </span>
                       <span className="cart-item-info">

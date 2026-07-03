@@ -16,6 +16,7 @@ import {
   type LaminateId,
 } from "@/data/laminates";
 import { LaminateSwatch } from "./LaminateFinish";
+import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 
 const MAX_TILT_Y = 22;
 const MAX_TILT_X = 16;
@@ -54,6 +55,7 @@ type HeroProps = {
 };
 
 function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
+  const { src: imageUrl, onError: onImageError } = useStickerImageWithFallback(sticker.image);
   const stageRef = useRef<HTMLDivElement>(null);
   const surfaceRef = useRef<HTMLDivElement>(null);
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
@@ -185,7 +187,7 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
             className={`sticker-popout-hero-surface laminate-surface--${laminateId}`}
           >
             <Image
-              src={sticker.image}
+              src={imageUrl}
               alt={sticker.name}
               fill
               sizes="(max-width: 640px) 88vw, 340px"
@@ -193,6 +195,7 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
               priority
               draggable={false}
               onLoad={handleImageLoad}
+              onError={onImageError}
             />
             {artFrame && (
               <div
@@ -210,8 +213,8 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
                   style={{
                     opacity: shineOpacity,
                     backgroundPosition: shinePosition,
-                    WebkitMaskImage: `url(${sticker.image})`,
-                    maskImage: `url(${sticker.image})`,
+                    WebkitMaskImage: `url(${imageUrl})`,
+                    maskImage: `url(${imageUrl})`,
                   }}
                 />
               </div>

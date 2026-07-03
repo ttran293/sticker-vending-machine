@@ -11,6 +11,7 @@ import {
   type LaminateId,
 } from "@/data/laminates";
 import { LaminateOverlay, LaminateSwatch } from "./LaminateFinish";
+import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 
 export type CartLine = {
   key: string;
@@ -34,6 +35,25 @@ type Props = {
   onConfirm: () => void;
   confirmed: boolean;
 };
+
+function CheckoutLineThumb({
+  imagePath,
+  alt,
+  laminateId,
+}: {
+  imagePath: string;
+  alt: string;
+  laminateId: LaminateId;
+}) {
+  const { src, onError } = useStickerImageWithFallback(imagePath);
+
+  return (
+    <>
+      <Image src={src} alt={alt} width={44} height={44} onError={onError} />
+      <LaminateOverlay laminateId={laminateId} image={src} />
+    </>
+  );
+}
 
 export default function CheckoutModal({
   open,
@@ -135,10 +155,10 @@ export default function CheckoutModal({
                   {lines.map((line) => (
                     <li key={line.key}>
                       <span className="checkout-thumb">
-                        <Image src={line.sticker.image} alt={line.sticker.name} width={44} height={44} />
-                        <LaminateOverlay
+                        <CheckoutLineThumb
+                          imagePath={line.sticker.image}
+                          alt={line.sticker.name}
                           laminateId={line.laminateId}
-                          image={line.sticker.image}
                         />
                       </span>
                       <span className="checkout-name">

@@ -6,6 +6,7 @@ import { Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { Sticker } from "@/data/stickers";
 import { createDieCutTexture } from "@/lib/stickerTexture";
+import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 import {
   BASE_SCALE,
   HOVER_SCALE,
@@ -52,6 +53,7 @@ export default function Sticker3D({
   const punch = useRef(0);
   const hoverT = useRef(0);
   const rackHover = useRackHover();
+  const { src: primaryImageUrl, localUrl } = useStickerImageWithFallback(sticker.image);
 
   const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
   const [reducedMotion, setReducedMotion] = useState(false);
@@ -72,26 +74,37 @@ export default function Sticker3D({
 
     let active = true;
     const loader = new THREE.TextureLoader();
-    loader.load(
-      sticker.image,
-      (loaded) => {
-        if (!active) {
+    loader.setCrossOrigin("anonymous");
+
+    const loadTexture = (url: string, isFallback: boolean) => {
+      loader.load(
+        url,
+        (loaded) => {
+          if (!active) {
+            loaded.dispose();
+            return;
+          }
+          const img = loaded.image as HTMLImageElement;
+          if (img?.naturalWidth > 0) setTexture(createDieCutTexture(img));
           loaded.dispose();
-          return;
-        }
-        const img = loaded.image as HTMLImageElement;
-        if (img?.naturalWidth > 0) setTexture(createDieCutTexture(img));
-        loaded.dispose();
-      },
-      undefined,
-      () => {
-        if (active) setTexture(null);
-      },
-    );
+        },
+        undefined,
+        () => {
+          if (!active) return;
+          if (!isFallback && url !== localUrl) {
+            loadTexture(localUrl, true);
+            return;
+          }
+          setTexture(null);
+        },
+      );
+    };
+
+    loadTexture(primaryImageUrl, false);
     return () => {
       active = false;
     };
-  }, [sticker.image, sticker.placeholder]);
+  }, [sticker.image, sticker.placeholder, primaryImageUrl, localUrl]);
 
   const material = useMemo(() => {
     if (!texture) return null;

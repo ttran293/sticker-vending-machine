@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth";
 import { applySlotAssignment, readMachineLayout, writeMachineLayout } from "@/lib/machineSlots";
+import { isStickerPath, normalizeStickerPath } from "@/lib/s3/stickerAssets";
 import { SLOT_COUNT } from "@/lib/machineLayoutShared";
 
 export async function GET() {
@@ -73,7 +74,7 @@ export async function PATCH(request: Request) {
     imagePath !== null &&
     imagePath !== undefined &&
     imagePath !== "" &&
-    (typeof imagePath !== "string" || !imagePath.startsWith("/stickers/"))
+    (typeof imagePath !== "string" || !isStickerPath(imagePath))
   ) {
     return NextResponse.json({ error: "Invalid sticker path." }, { status: 400 });
   }
@@ -81,7 +82,7 @@ export async function PATCH(request: Request) {
   const normalizedImage =
     imagePath === null || imagePath === undefined || imagePath === ""
       ? null
-      : imagePath;
+      : normalizeStickerPath(imagePath);
 
   try {
     const layout = await readMachineLayout();

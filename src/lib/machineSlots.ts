@@ -4,6 +4,7 @@ import {
   type Sticker,
 } from "@/data/stickers";
 import { fallbackCatalogEntry } from "@/lib/stickerMetadata";
+import { resolveStickerImageUrl, getStickerAssetMode, type StickerAssetMode } from "@/lib/s3/stickerAssets";
 import {
   DEFAULT_LAYOUT,
   getSlotCode,
@@ -113,7 +114,10 @@ export function applySlotAssignment(
   return next;
 }
 
-export function buildMachineStickers(layout: MachineLayout): Sticker[] {
+export function buildMachineStickers(
+  layout: MachineLayout,
+  assetMode: StickerAssetMode = "local",
+): Sticker[] {
   return layout.map((image, index) => {
     const row = Math.floor(index / GRID_COLS);
     const col = index % GRID_COLS;
@@ -140,7 +144,7 @@ export function buildMachineStickers(layout: MachineLayout): Sticker[] {
       note: meta.note,
       detail: meta.detail,
       price: meta.price,
-      image,
+      image: resolveStickerImageUrl(image, assetMode),
       slotCode,
       transparent: meta.transparent,
     };
@@ -148,5 +152,9 @@ export function buildMachineStickers(layout: MachineLayout): Sticker[] {
 }
 
 export async function getMachineStickers() {
-  return buildMachineStickers(await readMachineLayout());
+  const [layout, assetMode] = await Promise.all([
+    readMachineLayout(),
+    getStickerAssetMode(),
+  ]);
+  return buildMachineStickers(layout, assetMode);
 }
