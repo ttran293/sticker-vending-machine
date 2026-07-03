@@ -11,6 +11,17 @@ export type Sticker = {
   saleLabel?: string;
 };
 
+export type CatalogEntry = {
+  slug: string;
+  name: string;
+  note: string;
+  detail: string;
+  price: number;
+  image: string;
+  category: string;
+  transparent?: boolean;
+};
+
 export const GRID_COLS = 5;
 export const GRID_ROWS = 4;
 
@@ -206,45 +217,91 @@ const BUTTERCUP_CATALOG = [
   },
 ] as const;
 
-const CATEGORY_ROWS = [
-  HAT_DOG_CATALOG,
-  CAT_CLIMB_CATALOG,
-  CAT_CLIMB_EXP_CATALOG,
-  BUTTERCUP_CATALOG,
+const MUSIC_ALBUM_CATALOG = [
+  {
+    slug: "aladdin",
+    name: "ALADDIN SANE",
+    note: "glam-rock pup",
+    detail: "Bowie tribute · hand-painted lightning bolt · about 2″ laminated vinyl",
+    price: 1,
+    image: "/stickers/music_album/001_aladdin_sane_dog.png",
+  },
+  {
+    slug: "thriller",
+    name: "THRILLER",
+    note: "bow-tie good boy",
+    detail: "MJ-era portrait · pink backdrop · about 2″ laminated vinyl",
+    price: 1,
+    image: "/stickers/music_album/02_thriller_dog.png",
+  },
+  {
+    slug: "weezer",
+    name: "WEEZER",
+    note: "the blue album",
+    detail: "Band lineup · green studio wall · about 2″ laminated vinyl",
+    price: 1,
+    image: "/stickers/music_album/03_weezer_dog.png",
+  },
+  {
+    slug: "igor",
+    name: "IGOR",
+    note: "pink-suited pup",
+    detail: "Tyler tribute · bold suit portrait · about 2″ laminated vinyl",
+    price: 1,
+    image: "/stickers/music_album/004_igor_dog.png",
+  },
+  {
+    slug: "blonde",
+    name: "BLONDE",
+    note: "shower-fresh",
+    detail: "Frank Ocean homage · shower tiles · about 2″ laminated vinyl",
+    price: 1,
+    image: "/stickers/music_album/08_blonde_dog.png",
+  },
 ] as const;
 
-const SALE_SLOTS: number[] = [];
+const CATEGORY_ROWS = [
+  { id: "hat-dog", label: "Hat Dog", catalog: HAT_DOG_CATALOG },
+  { id: "cat-climb", label: "Cat Climb", catalog: CAT_CLIMB_CATALOG },
+  { id: "cat-climb-exp", label: "Cat Climb Exp", catalog: CAT_CLIMB_EXP_CATALOG },
+  { id: "buttercup", label: "Buttercup", catalog: BUTTERCUP_CATALOG },
+] as const;
 
-/** 5×4 shelf grid — keeps each category on its own row */
-export const stickers: Sticker[] = Array.from({ length: GRID_COLS * GRID_ROWS }, (_, i) => {
-  const row = Math.floor(i / GRID_COLS);
-  const col = i % GRID_COLS;
-  const category = CATEGORY_ROWS[row];
-  const base = category?.[col];
-  const slotCode = `${String.fromCharCode(65 + row)}${col + 1}`;
+const METADATA_CATALOGS = [
+  ...CATEGORY_ROWS,
+  { id: "music-album", label: "Music Album", catalog: MUSIC_ALBUM_CATALOG },
+] as const;
 
-  if (!base) {
-    return {
-      id: `placeholder-${row}-${col}`,
-      name: "PLACEHOLDER",
-      note: "empty slot",
-      detail: "More stickers are on the way.",
-      price: 0,
-      image: "",
-      slotCode,
-      placeholder: true,
-    };
-  }
-
+function toCatalogEntry(
+  entry: {
+    slug: string;
+    name: string;
+    note: string;
+    detail: string;
+    price: number;
+    image: string;
+    transparent?: boolean;
+  },
+  category: string,
+): CatalogEntry {
   return {
-    id: `${base.slug}-${row}-${col}`,
-    name: base.name,
-    note: base.note,
-    detail: base.detail,
-    price: base.price,
-    image: base.image,
-    slotCode,
-    transparent: "transparent" in base ? base.transparent : undefined,
-    saleLabel: SALE_SLOTS.includes(i) ? "-10%" : undefined,
+    slug: entry.slug,
+    name: entry.name,
+    note: entry.note,
+    detail: entry.detail,
+    price: entry.price,
+    image: entry.image,
+    category,
+    transparent: "transparent" in entry ? entry.transparent : undefined,
   };
-});
+}
+
+/** Known sticker metadata keyed by public image path */
+export const catalogMetadataByImage: Record<string, CatalogEntry> = Object.fromEntries(
+  METADATA_CATALOGS.flatMap(({ label, catalog }) =>
+    catalog.map((entry) => [entry.image, toCatalogEntry(entry, label)] as const),
+  ),
+);
+
+/** Catalog entries with known metadata (machine rows + backlog metadata) */
+export const stickerCatalog: CatalogEntry[] = Object.values(catalogMetadataByImage);

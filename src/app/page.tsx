@@ -1,9 +1,14 @@
+import { getMachineStickers } from "@/lib/machineSlots";
 import VendingMachine from "@/components/VendingMachine";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const stickers = await getMachineStickers();
+
   return (
     <main className="page">
-      <VendingMachine />
+      <VendingMachine stickers={stickers} />
     </main>
   );
 }

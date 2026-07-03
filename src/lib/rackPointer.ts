@@ -3,7 +3,7 @@
  * StickerCanvas drives this every frame; Sticker3D meshes do not raycast.
  */
 import * as THREE from "three";
-import { GRID_COLS, stickers, type Sticker } from "@/data/stickers";
+import { GRID_COLS, type Sticker } from "@/data/stickers";
 import {
   getColCenterLocalX,
   getRowCenterLocalY,
@@ -98,8 +98,11 @@ function distSq(x: number, y: number, rect: ProjectedRect) {
   return dx * dx + dy * dy;
 }
 
-export function buildProjectedSlots(camera: THREE.Camera): ProjectedSlot[] {
-  return stickers.map((sticker, index) => {
+export function buildProjectedSlots(
+  camera: THREE.Camera,
+  machineStickers: Sticker[],
+): ProjectedSlot[] {
+  return machineStickers.map((sticker, index) => {
     const col = index % GRID_COLS;
     const row = Math.floor(index / GRID_COLS);
     const cx = getColCenterLocalX(col);

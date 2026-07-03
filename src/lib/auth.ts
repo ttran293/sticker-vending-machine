@@ -77,6 +77,14 @@ export function getAdminSessionCookieOptions(token: string) {
   };
 }
 
+export async function requireAdmin() {
+  const authenticated = await isAdminAuthenticated();
+  if (!authenticated) {
+    return { ok: false as const, response: Response.json({ error: "Unauthorized." }, { status: 401 }) };
+  }
+  return { ok: true as const };
+}
+
 export function getClearAdminSessionCookieOptions() {
   return {
     name: ADMIN_SESSION_COOKIE,

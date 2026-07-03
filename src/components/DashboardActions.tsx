@@ -20,7 +20,7 @@ export default function DashboardActions() {
   }
 
   return (
-    <div className="admin-actions">
+    <div className="dashboard-actions">
       <Link href="/" className="btn-ghost admin-action-btn">
         Back to machine
       </Link>

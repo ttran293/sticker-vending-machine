@@ -3,7 +3,7 @@
 import { Suspense, useLayoutEffect, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import * as THREE from "three";
-import { stickers, GRID_COLS, type Sticker } from "@/data/stickers";
+import { GRID_COLS, type Sticker } from "@/data/stickers";
 import {
   getColCenterLocalX,
   getRackBounds,
@@ -48,6 +48,7 @@ function FitCamera() {
 }
 
 type Props = {
+  stickers: Sticker[];
   infoOpenId: string | null;
   laminateBySticker: Record<string, LaminateId>;
   onSelect: (sticker: Sticker) => void;
@@ -55,10 +56,12 @@ type Props = {
 };
 
 function StickerRack({
+  stickers,
   infoOpenId,
   laminateBySticker,
   onInfoChange,
 }: {
+  stickers: Sticker[];
   infoOpenId: string | null;
   laminateBySticker: Record<string, LaminateId>;
   onSelect: (sticker: Sticker) => void;
@@ -95,6 +98,7 @@ function StickerRack({
 }
 
 export default function StickerCanvas({
+  stickers,
   infoOpenId,
   laminateBySticker,
   onSelect,
@@ -108,12 +112,13 @@ export default function StickerCanvas({
       style={{ width: "100%", height: "100%", display: "block" }}
     >
       <RackHoverProvider>
-        <RackPointerBridge onSelect={onSelect} infoOpenId={infoOpenId} />
+        <RackPointerBridge stickers={stickers} onSelect={onSelect} infoOpenId={infoOpenId} />
         <FitCamera />
         <ambientLight intensity={1} />
         <Suspense fallback={null}>
           <group position={[0, RACK_Y_OFFSET, 0]}>
             <StickerRack
+              stickers={stickers}
               infoOpenId={infoOpenId}
               laminateBySticker={laminateBySticker}
               onSelect={onSelect}
@@ -127,9 +132,11 @@ export default function StickerCanvas({
 }
 
 function RackPointerBridge({
+  stickers,
   onSelect,
   infoOpenId,
 }: {
+  stickers: Sticker[];
   onSelect: (sticker: Sticker) => void;
   infoOpenId: string | null;
 }) {
@@ -137,12 +144,12 @@ function RackPointerBridge({
   const { gl, camera } = useThree();
   const pointerNdc = useRef({ x: 0, y: 0 });
   const pointerInside = useRef(false);
-  const slotsRef = useRef(buildProjectedSlots(camera));
+  const slotsRef = useRef(buildProjectedSlots(camera, stickers));
 
   useFrame(() => {
     if (!rackHover) return;
 
-    slotsRef.current = buildProjectedSlots(camera);
+    slotsRef.current = buildProjectedSlots(camera, stickers);
 
     if (!pointerInside.current) {
       rackHover.clearHover();
@@ -180,7 +187,7 @@ function RackPointerBridge({
       if (infoOpenId) return;
       if (!isInsideCanvas(event, canvas)) return;
       const ndc = pointerEventToNdc(event, canvas);
-      const hit = resolvePointerHit(ndc.x, ndc.y, buildProjectedSlots(camera));
+      const hit = resolvePointerHit(ndc.x, ndc.y, buildProjectedSlots(camera, stickers));
 
       if (hit.zone === "sticker" && hit.sticker && !hit.sticker.placeholder) {
         rackHover.triggerPunch(hit.sticker.id);
@@ -199,7 +206,7 @@ function RackPointerBridge({
       window.removeEventListener("pointermove", updatePointer);
       window.removeEventListener("pointerdown", onDown);
     };
-  }, [rackHover, gl, camera, onSelect, infoOpenId]);
+  }, [rackHover, gl, camera, onSelect, infoOpenId, stickers]);
 
   return null;
 }

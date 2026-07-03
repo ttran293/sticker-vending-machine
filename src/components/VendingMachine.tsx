@@ -4,7 +4,7 @@ import { useMemo, useRef, useState, useEffect } from "react";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
-import { stickers, type Sticker } from "@/data/stickers";
+import { type Sticker } from "@/data/stickers";
 import { applyCoupon, resolveCoupon, type Coupon } from "@/data/coupons";
 import CheckoutModal, { type CartLine } from "./CheckoutModal";
 import StickerPopOut from "./StickerPopOut";
@@ -36,7 +36,7 @@ type DispensedItem = {
   laminateId: LaminateId;
 };
 
-export default function VendingMachine() {
+export default function VendingMachine({ stickers }: { stickers: Sticker[] }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [dispensedItems, setDispensedItems] = useState<DispensedItem[]>([]);
   const [lastPicked, setLastPicked] = useState<Sticker | null>(null);
@@ -162,7 +162,7 @@ export default function VendingMachine() {
               : [];
           }),
         ),
-    [counts],
+    [counts, stickers],
   );
 
   const totalItems = lines.reduce((n, l) => n + l.count, 0);
@@ -247,6 +247,7 @@ export default function VendingMachine() {
                   style={{ aspectRatio: getRackViewportAspect() }}
                 >
                   <StickerCanvas
+                    stickers={stickers}
                     infoOpenId={infoSticker?.id ?? null}
                     laminateBySticker={selectedFinishes}
                     onSelect={add}
