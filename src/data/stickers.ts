@@ -14,46 +14,51 @@ export type Sticker = {
 export const GRID_COLS = 5;
 export const GRID_ROWS = 4;
 
-const MUSIC_ALBUM_CATALOG = [
+const HAT_DOG_CATALOG = [
   {
-    slug: "aladdin",
-    name: "ALADDIN SANE",
-    note: "glam-rock pup",
-    detail: "Bowie tribute · hand-painted lightning bolt · about 2″ laminated vinyl",
+    slug: "hat-dog-bucket-hat",
+    name: "BUCKET HAT",
+    note: "flat-cap laugh",
+    detail: "White pup in a black flat cap · big grin · about 2″ laminated vinyl",
     price: 1,
-    image: "/stickers/music_album/001_aladdin_sane_dog.png",
+    image: "/stickers/hat-dog/bucket-hat.png",
+    transparent: true,
   },
   {
-    slug: "thriller",
-    name: "THRILLER",
-    note: "bow-tie good boy",
-    detail: "MJ-era portrait · pink backdrop · about 2″ laminated vinyl",
+    slug: "hat-dog-angry",
+    name: "BACKWARDS CAP",
+    note: "stern chihuahua",
+    detail: "White chihuahua in a backwards navy cap · about 2″ laminated vinyl",
     price: 1,
-    image: "/stickers/music_album/02_thriller_dog.png",
+    image: "/stickers/hat-dog/hat-angry.png",
+    transparent: true,
   },
   {
-    slug: "weezer",
-    name: "WEEZER",
-    note: "the blue album",
-    detail: "Band lineup · green studio wall · about 2″ laminated vinyl",
+    slug: "hat-dog-smile",
+    name: "HAT & SMILE",
+    note: "flower cap joy",
+    detail: "Happy pup in a denim cap with yellow flowers · about 2″ laminated vinyl",
     price: 1,
-    image: "/stickers/music_album/03_weezer_dog.png",
+    image: "/stickers/hat-dog/hat-and-smie.png",
+    transparent: true,
   },
   {
-    slug: "igor",
-    name: "IGOR",
-    note: "pink-suited pup",
-    detail: "Tyler tribute · bold suit portrait · about 2″ laminated vinyl",
+    slug: "hat-dog-cute",
+    name: "CUTE HAT DOG",
+    note: "flower portrait",
+    detail: "Fluffy pup in a denim cap holding a yellow flower · about 2″ laminated vinyl",
     price: 1,
-    image: "/stickers/music_album/004_igor_dog.png",
+    image: "/stickers/hat-dog/hat-cute.png",
+    transparent: true,
   },
   {
-    slug: "blonde",
-    name: "BLONDE",
-    note: "shower-fresh",
-    detail: "Frank Ocean homage · shower tiles · about 2″ laminated vinyl",
+    slug: "hat-dog-jelly",
+    name: "ARUBA HAT",
+    note: "backwards mustard cap",
+    detail: "Fluffy pup in a backwards yellow ARUBA cap · about 2″ laminated vinyl",
     price: 1,
-    image: "/stickers/music_album/08_blonde_dog.png",
+    image: "/stickers/hat-dog/jelly-with-hat.png",
+    transparent: true,
   },
 ] as const;
 
@@ -202,7 +207,7 @@ const BUTTERCUP_CATALOG = [
 ] as const;
 
 const CATEGORY_ROWS = [
-  MUSIC_ALBUM_CATALOG,
+  HAT_DOG_CATALOG,
   CAT_CLIMB_CATALOG,
   CAT_CLIMB_EXP_CATALOG,
   BUTTERCUP_CATALOG,

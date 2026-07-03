@@ -119,7 +119,8 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
     requestAnimationFrame(measureArtFrame);
   }, [naturalSize, measureArtFrame]);
 
-  const handleImageLoad = useCallback((img: HTMLImageElement) => {
+  const handleImageLoad = useCallback((event: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget;
     setNaturalSize({ w: img.naturalWidth, h: img.naturalHeight });
   }, []);
 
@@ -191,7 +192,7 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
               className="sticker-popout-hero-img"
               priority
               draggable={false}
-              onLoadingComplete={handleImageLoad}
+              onLoad={handleImageLoad}
             />
             {artFrame && (
               <div
