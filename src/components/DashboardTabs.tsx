@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import StickerCatalogGrid from "@/components/StickerCatalogGrid";
 import ReviewImagesSection from "@/components/ReviewImagesSection";
 import StickerUploadPanel from "@/components/StickerUploadPanel";
@@ -10,6 +10,15 @@ import type { ReviewImage } from "@/lib/reviewImages";
 import styles from "./DashboardTabs.module.css";
 
 type DashboardTab = "stickers" | "reviews";
+
+const DASHBOARD_TAB_STORAGE_KEY = "dashboard-active-tab";
+
+function readStoredTab(): DashboardTab {
+  if (typeof window === "undefined") return "stickers";
+
+  const saved = window.localStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
+  return saved === "reviews" ? "reviews" : "stickers";
+}
 
 type Props = {
   entries: CatalogEntry[];
@@ -23,6 +32,15 @@ export default function DashboardTabs({ entries, initialLayout, reviewImages }: 
   const reviewsPanelId = `${baseId}-reviews-panel`;
   const [activeTab, setActiveTab] = useState<DashboardTab>("stickers");
 
+  useEffect(() => {
+    setActiveTab(readStoredTab());
+  }, []);
+
+  function selectTab(tab: DashboardTab) {
+    setActiveTab(tab);
+    window.localStorage.setItem(DASHBOARD_TAB_STORAGE_KEY, tab);
+  }
+
   return (
     <>
       <div className={styles.tabs} role="tablist" aria-label="Dashboard sections">
@@ -33,7 +51,7 @@ export default function DashboardTabs({ entries, initialLayout, reviewImages }: 
           aria-selected={activeTab === "stickers"}
           aria-controls={stickersPanelId}
           className={`${styles.tab}${activeTab === "stickers" ? ` ${styles.tabActive}` : ""}`}
-          onClick={() => setActiveTab("stickers")}
+          onClick={() => selectTab("stickers")}
         >
           Stickers
         </button>
@@ -44,7 +62,7 @@ export default function DashboardTabs({ entries, initialLayout, reviewImages }: 
           aria-selected={activeTab === "reviews"}
           aria-controls={reviewsPanelId}
           className={`${styles.tab}${activeTab === "reviews" ? ` ${styles.tabActive}` : ""}`}
-          onClick={() => setActiveTab("reviews")}
+          onClick={() => selectTab("reviews")}
         >
           Review images
         </button>
