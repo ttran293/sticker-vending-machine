@@ -131,7 +131,7 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
         <h2 id="sticker-upload-title" className={styles.title}>
           Add sticker
         </h2>
-        <p className={styles.note}>PNG, JPG, WEBP, or GIF · max 5 MB · saved to S3</p>
+        <p className={styles.note}>PNG, JPG, WEBP, or GIF · saved to S3</p>
       </header>
 
       <div className={styles.split}>

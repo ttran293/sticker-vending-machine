@@ -10,7 +10,6 @@ import {
 } from "@/lib/s3/stickerAssets";
 
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 
 const MIME_BY_EXT: Record<string, string> = {
   ".png": "image/png",
@@ -65,10 +64,6 @@ export async function saveStickerFile(
 ) {
   if (!isS3Configured()) {
     throw new Error("S3 is not configured. Set AWS env vars in .env.local to upload stickers.");
-  }
-
-  if (body.byteLength > MAX_UPLOAD_BYTES) {
-    throw new Error("File is too large. Maximum size is 5 MB.");
   }
 
   const safeFolder = sanitizeStickerFolder(folder);
