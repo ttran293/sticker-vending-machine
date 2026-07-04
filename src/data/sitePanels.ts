@@ -29,16 +29,6 @@ export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
   },
   offTheRack: {
     title: "OFF THE RACK",
-    photos: [
-      {
-        image: "/img_review/alan_pic1.jpg",
-        alt: "Sticker in use",
-      },
-      {
-        image: "/img_review/alan_pic2.jpg",
-        alt: "Sticker in use",
-      },
-    ],
   },
   faq: {
     title: "FAQ",

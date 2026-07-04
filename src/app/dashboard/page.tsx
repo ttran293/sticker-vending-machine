@@ -1,10 +1,10 @@
 import { redirect } from "next/navigation";
 import DashboardActions from "@/components/DashboardActions";
-import StickerCatalogGrid from "@/components/StickerCatalogGrid";
-import StickerUploadPanel from "@/components/StickerUploadPanel";
+import DashboardTabs from "@/components/DashboardTabs";
 import { StickerAssetProvider } from "@/components/StickerAssetProvider";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { readMachineLayout } from "@/lib/machineSlots";
+import { getAdminReviewImages } from "@/lib/reviewImages";
 import { getAllAvailableStickers } from "@/lib/stickerInventory";
 import { getStickerAssetMode } from "@/lib/s3/stickerAssets";
 
@@ -15,10 +15,11 @@ export default async function DashboardPage() {
     redirect("/admin");
   }
 
-  const [entries, layout, assetMode] = await Promise.all([
+  const [entries, layout, assetMode, reviewImages] = await Promise.all([
     getAllAvailableStickers(),
     readMachineLayout(),
     getStickerAssetMode(),
+    getAdminReviewImages(),
   ]);
 
   return (
@@ -33,9 +34,11 @@ export default async function DashboardPage() {
           <DashboardActions />
         </header>
 
-        <StickerUploadPanel />
-
-        <StickerCatalogGrid entries={entries} initialLayout={layout} />
+        <DashboardTabs
+          entries={entries}
+          initialLayout={layout}
+          reviewImages={reviewImages}
+        />
         </div>
       </main>
     </StickerAssetProvider>

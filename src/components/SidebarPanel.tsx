@@ -3,14 +3,28 @@
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { SITE_PANELS, type SitePanelId } from "@/data/sitePanels";
+import type { ReviewImage } from "@/lib/reviewImages";
 
 type Props = {
   panel: SitePanelId;
+  reviewPhotos?: ReviewImage[];
   onClose: () => void;
 };
 
-export default function SidebarPanel({ panel, onClose }: Props) {
+export default function SidebarPanel({ panel, reviewPhotos = [], onClose }: Props) {
   const content = SITE_PANELS[panel];
+  const galleryPhotos =
+    panel === "offTheRack"
+      ? reviewPhotos.map((photo) => ({
+          key: photo.path,
+          image: photo.image,
+          alt: photo.alt,
+        }))
+      : (content.photos ?? []).map((photo) => ({
+          key: photo.image,
+          image: photo.image,
+          alt: photo.alt,
+        }));
 
   return (
     <>
@@ -59,10 +73,10 @@ export default function SidebarPanel({ panel, onClose }: Props) {
             </div>
           ))}
 
-          {content.photos && (
+          {galleryPhotos.length > 0 && (
             <div className="sidebar-photo-grid">
-              {content.photos.map((photo) => (
-                <figure key={photo.image} className="sidebar-photo-cell">
+              {galleryPhotos.map((photo) => (
+                <figure key={photo.key} className="sidebar-photo-cell">
                   <Image
                     src={photo.image}
                     alt={photo.alt}

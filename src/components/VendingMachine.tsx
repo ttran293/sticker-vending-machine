@@ -12,6 +12,7 @@ import SidebarPanel from "./SidebarPanel";
 import MusicPlayer from "./MusicPlayer";
 import LoginControl from "./LoginControl";
 import type { SitePanelId } from "@/data/sitePanels";
+import type { ReviewImage } from "@/lib/reviewImages";
 import { getRackViewportAspect } from "@/lib/sticker3dConstants";
 import { getVisitorCount } from "@/lib/visitorCount";
 import {
@@ -60,7 +61,13 @@ function StickerThumb({
   );
 }
 
-export default function VendingMachine({ stickers }: { stickers: Sticker[] }) {
+export default function VendingMachine({
+  stickers,
+  reviewPhotos = [],
+}: {
+  stickers: Sticker[];
+  reviewPhotos?: ReviewImage[];
+}) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [dispensedItems, setDispensedItems] = useState<DispensedItem[]>([]);
   const [lastPicked, setLastPicked] = useState<Sticker | null>(null);
@@ -601,6 +608,7 @@ export default function VendingMachine({ stickers }: { stickers: Sticker[] }) {
           <SidebarPanel
             key={sidebarPanel}
             panel={sidebarPanel}
+            reviewPhotos={reviewPhotos}
             onClose={() => setSidebarPanel(null)}
           />
         )}
