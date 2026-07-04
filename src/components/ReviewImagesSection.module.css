@@ -74,6 +74,20 @@
   color: var(--muted);
 }
 
+.fileBtnRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.fileBtnSecondary {
+  background: rgba(220, 204, 172, 0.2);
+}
+
+.fileBtnSecondary:hover {
+  background: rgba(220, 204, 172, 0.45);
+}
+
 .fileInput {
   display: none;
 }

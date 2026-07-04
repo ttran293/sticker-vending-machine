@@ -75,7 +75,7 @@ export default function SidebarPanel({ panel, reviewPhotos = [], onClose }: Prop
 
           {galleryPhotos.length > 0 && (
             <div className="sidebar-photo-grid">
-              {galleryPhotos.map((photo) => (
+              {galleryPhotos.map((photo, index) => (
                 <figure key={photo.key} className="sidebar-photo-cell">
                   <Image
                     src={photo.image}
@@ -83,6 +83,8 @@ export default function SidebarPanel({ panel, reviewPhotos = [], onClose }: Prop
                     fill
                     className="sidebar-photo-img"
                     sizes="(max-width: 560px) 44vw, 200px"
+                    priority={index === 0}
+                    loading={index === 0 ? "eager" : "lazy"}
                   />
                 </figure>
               ))}

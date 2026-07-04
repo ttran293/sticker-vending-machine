@@ -12,8 +12,10 @@ type Props = {
 
 export default function ReviewImagesSection({ initialImages }: Props) {
   const router = useRouter();
-  const fileInputId = useId();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const browseInputId = useId();
+  const cameraInputId = useId();
+  const browseInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [images, setImages] = useState(initialImages);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -33,24 +35,48 @@ export default function ReviewImagesSection({ initialImages }: Props) {
     };
   }, [previewUrl]);
 
+  function clearFileInputs() {
+    if (browseInputRef.current) browseInputRef.current.value = "";
+    if (cameraInputRef.current) cameraInputRef.current.value = "";
+  }
+
+  function normalizeCapturedFile(file: File) {
+    const genericName = /^image\.(jpe?g|png|webp|gif)$/i.test(file.name);
+    if (!genericName) return file;
+
+    const ext = file.name.match(/\.(jpe?g|png|webp|gif)$/i)?.[0]?.toLowerCase() ?? ".jpg";
+    return new File([file], `review-${Date.now()}${ext}`, { type: file.type || "image/jpeg" });
+  }
+
+  function selectFile(file: File | null, source: "browse" | "camera" = "browse") {
+    setError(null);
+    setSuccess(null);
+    clearFileInputs();
+
+    const nextFile = file ? (source === "camera" ? normalizeCapturedFile(file) : file) : null;
+    setSelectedFile(nextFile);
+
+    setPreviewUrl((current) => {
+      if (current) URL.revokeObjectURL(current);
+      return nextFile ? URL.createObjectURL(nextFile) : null;
+    });
+  }
+
   function clearPreview() {
     setPreviewUrl((current) => {
       if (current) URL.revokeObjectURL(current);
       return null;
     });
     setSelectedFile(null);
+    clearFileInputs();
   }
 
-  function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    setError(null);
-    setSuccess(null);
-    setSelectedFile(file ?? null);
+  function handleBrowseChange(event: React.ChangeEvent<HTMLInputElement>) {
+    selectFile(event.target.files?.[0] ?? null, "browse");
+  }
 
-    setPreviewUrl((current) => {
-      if (current) URL.revokeObjectURL(current);
-      return file ? URL.createObjectURL(file) : null;
-    });
+  function handleCameraChange(event: React.ChangeEvent<HTMLInputElement>) {
+    selectFile(event.target.files?.[0] ?? null, "camera");
   }
 
   async function handleUpload(event: React.FormEvent<HTMLFormElement>) {
@@ -58,9 +84,9 @@ export default function ReviewImagesSection({ initialImages }: Props) {
     setError(null);
     setSuccess(null);
 
-    const file = fileInputRef.current?.files?.[0];
+    const file = selectedFile;
     if (!file) {
-      setError("Choose an image file to upload.");
+      setError("Choose an image or take a photo to upload.");
       return;
     }
 
@@ -92,7 +118,6 @@ export default function ReviewImagesSection({ initialImages }: Props) {
       }
 
       setSuccess("Review image uploaded.");
-      if (fileInputRef.current) fileInputRef.current.value = "";
       clearPreview();
       startTransition(() => router.refresh());
     } catch (err) {
@@ -159,17 +184,35 @@ export default function ReviewImagesSection({ initialImages }: Props) {
             <div className={styles.field}>
               <span className={styles.label}>Image file</span>
               <input
-                ref={fileInputRef}
-                id={fileInputId}
+                ref={browseInputRef}
+                id={browseInputId}
                 type="file"
                 accept="image/png,image/jpeg,image/webp,image/gif"
                 className={styles.fileInput}
                 disabled={uploading}
-                onChange={handleFileChange}
+                onChange={handleBrowseChange}
               />
-              <label htmlFor={fileInputId} className={styles.fileBtn}>
-                Browse files
-              </label>
+              <input
+                ref={cameraInputRef}
+                id={cameraInputId}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className={styles.fileInput}
+                disabled={uploading}
+                onChange={handleCameraChange}
+              />
+              <div className={styles.fileBtnRow}>
+                <label htmlFor={browseInputId} className={styles.fileBtn}>
+                  Browse files
+                </label>
+                <label
+                  htmlFor={cameraInputId}
+                  className={`${styles.fileBtn} ${styles.fileBtnSecondary}`}
+                >
+                  Take photo
+                </label>
+              </div>
               <p className={styles.fileName}>{selectedFile?.name ?? "No file selected"}</p>
             </div>
 
@@ -199,7 +242,7 @@ export default function ReviewImagesSection({ initialImages }: Props) {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl} alt={selectedFile?.name ?? "Review preview"} />
             ) : (
-              <p className={styles.previewEmpty}>Select an image to preview before upload</p>
+              <p className={styles.previewEmpty}>Browse or take a photo to preview before upload</p>
             )}
           </div>
         </aside>
