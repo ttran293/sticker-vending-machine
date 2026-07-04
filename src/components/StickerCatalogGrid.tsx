@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
 import { createPortal } from "react-dom";
 import { GRID_COLS, type CatalogEntry } from "@/data/stickers";
 import {
@@ -22,11 +22,15 @@ function StickerCatalogCard({
   entry,
   slotCode,
   onAssign,
+  onDelete,
+  deleting,
   priorityLoad = false,
 }: {
   entry: CatalogEntry;
   slotCode: string | null;
   onAssign: () => void;
+  onDelete: () => void;
+  deleting: boolean;
   priorityLoad?: boolean;
 }) {
   const { src: imageUrl, onError: onImageError } = useStickerImageWithFallback(entry.image);
@@ -71,6 +75,7 @@ function StickerCatalogCard({
             event.stopPropagation();
             onAssign();
           }}
+          disabled={deleting}
         >
           {inMachine ? (
             <>
@@ -81,8 +86,109 @@ function StickerCatalogCard({
             <span className="catalog-assign-btn-label">Add to machine</span>
           )}
         </button>
+        <button
+          type="button"
+          className="catalog-delete-btn"
+          onClick={(event) => {
+            event.stopPropagation();
+            onDelete();
+          }}
+          disabled={deleting}
+        >
+          {deleting ? "Deleting…" : "Delete"}
+        </button>
       </div>
     </article>
+  );
+}
+
+type PendingDelete = {
+  entry: CatalogEntry;
+  slotCode: string | null;
+};
+
+function DeleteStickerDialog({
+  target,
+  deleting,
+  error,
+  onClose,
+  onConfirm,
+}: {
+  target: PendingDelete;
+  deleting: boolean;
+  error: string | null;
+  onClose: () => void;
+  onConfirm: () => void;
+}) {
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !deleting) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, deleting]);
+
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  return createPortal(
+    <div className="assign-slot-overlay">
+      <button
+        type="button"
+        className="assign-slot-backdrop"
+        aria-label="Close delete dialog"
+        onClick={onClose}
+        disabled={deleting}
+      />
+      <div
+        className="assign-slot-dialog catalog-delete-dialog"
+        role="alertdialog"
+        aria-modal="true"
+        aria-labelledby="delete-sticker-title"
+      >
+        <header className="assign-slot-dialog-head">
+          <div>
+            <p className="assign-slot-dialog-eyebrow">Remove sticker</p>
+            <h3 id="delete-sticker-title" className="assign-slot-dialog-title">
+              Delete {target.entry.name}?
+            </h3>
+            <p className="assign-slot-dialog-subtitle">
+              This removes the sticker from S3 and clears it from the machine. Local demo files in
+              public/stickers are not modified.
+              {target.slotCode
+                ? ` It is currently in slot ${target.slotCode} and will be cleared from the machine.`
+                : " It is in backlog only."}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="assign-slot-close"
+            onClick={onClose}
+            aria-label="Close"
+            disabled={deleting}
+          >
+            ×
+          </button>
+        </header>
+
+        {error && <p className="assign-slot-error">{error}</p>}
+
+        <div className="catalog-delete-actions">
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={deleting}>
+            Cancel
+          </button>
+          <button type="button" className="btn-primary catalog-delete-confirm" onClick={onConfirm} disabled={deleting}>
+            {deleting ? "Deleting…" : "Delete sticker"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -283,8 +389,11 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
   const router = useRouter();
   const [layout, setLayout] = useState(initialLayout);
   const [assignTarget, setAssignTarget] = useState<AssignTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<PendingDelete | null>(null);
   const [pendingReplace, setPendingReplace] = useState<PendingReplace | null>(null);
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
+  const [deletingImage, setDeletingImage] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -363,7 +472,7 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
       setLayout(data.slots);
       setPendingReplace(null);
       closeDialog();
-      router.refresh();
+      startTransition(() => router.refresh());
       return true;
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update slot.");
@@ -411,6 +520,53 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
     await patchSlot(slotIndex, null);
   }
 
+  async function handleDeleteSticker() {
+    if (!deleteTarget) return;
+
+    setDeletingImage(deleteTarget.entry.image);
+    setDeleteError(null);
+
+    try {
+      const response = await fetch("/api/admin/stickers", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_path: deleteTarget.entry.image }),
+      });
+
+      let data: { error?: string; slots?: MachineLayout } = {};
+      try {
+        const raw = await response.text();
+        if (raw.trim()) data = JSON.parse(raw) as typeof data;
+      } catch {
+        if (response.ok) {
+          throw new Error("Server returned an invalid response.");
+        }
+      }
+
+      if (!response.ok) {
+        setDeleteError(
+          data.error ??
+            (response.status === 401
+              ? "You are not logged in. Refresh and sign in again."
+              : `Delete failed (${response.status}).`),
+        );
+        return;
+      }
+
+      if (data.slots) {
+        setLayout(data.slots);
+      }
+
+      setDeleteTarget(null);
+      closeDialog();
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setDeleteError(err instanceof Error ? err.message : "Delete failed.");
+    } finally {
+      setDeletingImage(null);
+    }
+  }
+
   return (
     <>
       <section className="catalog-section">
@@ -436,12 +592,20 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
                     entry={entry}
                     slotCode={slotByImage.get(entry.image) ?? null}
                     priorityLoad={priorityLoad}
+                    deleting={deletingImage === entry.image}
                     onAssign={() => {
                       setError(null);
                       setPendingReplace(null);
                       setAssignTarget({
                         entry,
                         currentSlotCode: slotByImage.get(entry.image) ?? null,
+                      });
+                    }}
+                    onDelete={() => {
+                      setDeleteError(null);
+                      setDeleteTarget({
+                        entry,
+                        slotCode: slotByImage.get(entry.image) ?? null,
                       });
                     }}
                   />
@@ -451,6 +615,20 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
           </div>
         ))}
       </section>
+
+      {mounted && deleteTarget && (
+        <DeleteStickerDialog
+          target={deleteTarget}
+          deleting={deletingImage === deleteTarget.entry.image}
+          error={deleteError}
+          onClose={() => {
+            if (deletingImage) return;
+            setDeleteTarget(null);
+            setDeleteError(null);
+          }}
+          onConfirm={handleDeleteSticker}
+        />
+      )}
 
       {mounted && assignTarget && (
         <AssignSlotDialog

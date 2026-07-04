@@ -1,4 +1,6 @@
 import {
+  DeleteObjectCommand,
+  HeadObjectCommand,
   ListObjectsV2Command,
   PutObjectCommand,
   type PutObjectCommandInput,
@@ -131,6 +133,26 @@ export async function listStickerPathsFromS3(): Promise<string[]> {
   return paths.sort((a, b) => a.localeCompare(b));
 }
 
+export async function stickerObjectExistsInS3(imagePath: string): Promise<boolean> {
+  const client = getS3Client();
+  const config = getS3Config();
+  if (!client || !config) return false;
+
+  try {
+    await client.send(
+      new HeadObjectCommand({
+        Bucket: config.bucket,
+        Key: stickerPathToS3Key(imagePath),
+      }),
+    );
+    return true;
+  } catch (error) {
+    const name = error && typeof error === "object" && "name" in error ? String(error.name) : "";
+    if (name === "NotFound" || name === "NoSuchKey") return false;
+    throw error;
+  }
+}
+
 export async function uploadStickerObject(
   imagePath: string,
   body: PutObjectCommandInput["Body"],
@@ -159,6 +181,23 @@ export async function uploadStickerObject(
     path: normalizeStickerPath(imagePath),
     url: resolveStickerImageUrl(imagePath, "s3"),
   };
+}
+
+export async function deleteStickerObject(imagePath: string) {
+  const client = getS3Client();
+  const config = getS3Config();
+  if (!client || !config) return false;
+
+  const key = stickerPathToS3Key(imagePath);
+
+  await client.send(
+    new DeleteObjectCommand({
+      Bucket: config.bucket,
+      Key: key,
+    }),
+  );
+
+  return true;
 }
 
 export { isS3Configured };

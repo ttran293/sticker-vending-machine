@@ -1837,6 +1837,54 @@ body {
 .catalog-card-actions {
   margin-top: auto;
   border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+}
+
+.catalog-delete-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: transparent;
+  color: #9a2f2f;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.catalog-delete-btn:hover:not(:disabled) {
+  background: #fff0f0;
+}
+
+.catalog-delete-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.catalog-delete-dialog {
+  max-width: 420px;
+}
+
+.catalog-delete-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 0 20px 20px;
+}
+
+.catalog-delete-confirm {
+  background: #9a2f2f;
+  border-color: #9a2f2f;
+}
+
+.catalog-delete-confirm:hover:not(:disabled) {
+  background: #7d2525;
+  border-color: #7d2525;
 }
 
 .catalog-assign-btn {

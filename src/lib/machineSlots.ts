@@ -4,7 +4,12 @@ import {
   type Sticker,
 } from "@/data/stickers";
 import { fallbackCatalogEntry } from "@/lib/stickerMetadata";
-import { resolveStickerImageUrl, getStickerAssetMode, type StickerAssetMode } from "@/lib/s3/stickerAssets";
+import {
+  normalizeStickerPath,
+  resolveStickerImageUrl,
+  getStickerAssetMode,
+  type StickerAssetMode,
+} from "@/lib/s3/stickerAssets";
 import {
   DEFAULT_LAYOUT,
   getSlotCode,
@@ -96,6 +101,19 @@ export async function readMachineLayout(): Promise<MachineLayout> {
 
 export async function writeMachineLayout(layout: MachineLayout) {
   await writeMachineLayoutToSupabase(layout);
+}
+
+export async function removeImageFromAllSlots(imagePath: string): Promise<MachineLayout> {
+  const normalized = normalizeStickerPath(imagePath);
+  const layout = await readMachineLayout();
+  const next = layout.map((image) => (image === normalized ? null : image));
+  const changed = next.some((image, index) => image !== layout[index]);
+
+  if (changed) {
+    await writeMachineLayout(next);
+  }
+
+  return next;
 }
 
 export function applySlotAssignment(

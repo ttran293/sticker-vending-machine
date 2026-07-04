@@ -8,6 +8,11 @@ const CATEGORY_LABELS: Record<string, string> = {
   music_album: "Music Album",
 };
 
+export const STICKER_FOLDER_OPTIONS = Object.entries(CATEGORY_LABELS).map(([id, label]) => ({
+  id,
+  label,
+}));
+
 function formatLabel(value: string) {
   return value
     .replace(/[-_]+/g, " ")

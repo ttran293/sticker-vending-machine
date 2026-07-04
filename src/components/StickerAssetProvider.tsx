@@ -1,6 +1,14 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { resolveStickerImageUrl, type StickerAssetMode } from "@/lib/s3/stickerAssets";
 
 const StickerAssetContext = createContext<StickerAssetMode>("local");
@@ -32,15 +40,28 @@ export function useStickerImageWithFallback(imagePath: string) {
   const mode = useStickerAssetMode();
   const primary = resolveStickerImageUrl(imagePath, mode);
   const localUrl = resolveStickerImageUrl(imagePath, "local");
-  const [src, setSrc] = useState(primary);
+  const [useLocalFallback, setUseLocalFallback] = useState(false);
+  const canUpdateRef = useRef(false);
+
+  useLayoutEffect(() => {
+    canUpdateRef.current = true;
+    return () => {
+      canUpdateRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
-    setSrc(primary);
+    setUseLocalFallback(false);
   }, [primary, imagePath]);
 
   const onError = useCallback(() => {
-    setSrc((current) => (current !== localUrl ? localUrl : current));
-  }, [localUrl]);
+    if (!canUpdateRef.current) return;
+    setUseLocalFallback(true);
+  }, []);
 
-  return { src, onError, localUrl };
+  return {
+    src: useLocalFallback ? localUrl : primary,
+    onError,
+    localUrl,
+  };
 }

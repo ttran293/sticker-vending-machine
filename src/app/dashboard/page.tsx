@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import DashboardActions from "@/components/DashboardActions";
 import StickerCatalogGrid from "@/components/StickerCatalogGrid";
+import StickerUploadPanel from "@/components/StickerUploadPanel";
 import { StickerAssetProvider } from "@/components/StickerAssetProvider";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { readMachineLayout } from "@/lib/machineSlots";
@@ -29,10 +30,12 @@ export default async function DashboardPage() {
               <h1 className="admin-title">Dashboard</h1>
               <p className="admin-subtitle">Manage your sticker backlog and machine inventory.</p>
             </div>
-            <DashboardActions />
-          </header>
+          <DashboardActions />
+        </header>
 
-          <StickerCatalogGrid entries={entries} initialLayout={layout} />
+        <StickerUploadPanel />
+
+        <StickerCatalogGrid entries={entries} initialLayout={layout} />
         </div>
       </main>
     </StickerAssetProvider>
