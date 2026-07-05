@@ -548,6 +548,14 @@ export default function VendingMachine({
             >
               About
             </button>
+            <a
+              href="https://www.instagram.com/stickervendingmachine1/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="footer-link"
+            >
+              Instagram
+            </a>
             <button
               type="button"
               className="footer-link"
