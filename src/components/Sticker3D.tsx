@@ -110,7 +110,7 @@ export default function Sticker3D({
     if (!texture) return null;
     return new THREE.MeshBasicMaterial({
       map: texture,
-      color: laminateId === "matte" ? "#e8e2d6" : "#ffffff",
+      color: laminateId === "sandy-glitter" ? "#f0f0ec" : "#ffffff",
       transparent: true,
       alphaTest: 0.02,
       depthWrite: false,
@@ -120,13 +120,15 @@ export default function Sticker3D({
   }, [laminateId, texture]);
 
   const finishMaterial = useMemo(() => {
-    if (!texture || laminateId === "matte") return null;
+    if (!texture || laminateId === "sandy-glitter") return null;
+
+    const mode = laminateId === "laser-rainbow" ? 1 : 0;
 
     return new THREE.ShaderMaterial({
       uniforms: {
         map: { value: texture },
         time: { value: 0 },
-        mode: { value: laminateId === "laser-rainbow" ? 1 : 0 },
+        mode: { value: mode },
         finishOpacity: { value: 1 },
       },
       vertexShader: `
@@ -154,7 +156,7 @@ export default function Sticker3D({
           } else {
             float phase = diagonal * 5.4 + time * 0.35;
             vec3 rainbow = 0.58 + 0.42 * cos(phase + vec3(0.0, 2.094, 4.188));
-            float sheen = 0.34 + 0.18 * sin((vUv.x - vUv.y) * 9.0 - time * 0.28);
+            float sheen = 0.42 + 0.22 * sin((vUv.x - vUv.y) * 9.0 - time * 0.28);
             gl_FragColor = vec4(rainbow, sheen * artAlpha * finishOpacity);
           }
         }
@@ -228,11 +230,17 @@ export default function Sticker3D({
       frameDelta * 8,
     );
 
+    const renderOrder = hovered || infoActive ? 20 : 5;
+
     const mat = meshRef.current?.material;
     if (mat instanceof THREE.MeshBasicMaterial) {
-      const finishOpacity = laminateId === "matte" ? 0.9 : 1;
+      const finishOpacity = 1;
       const targetOpacity = (dimmed ? 0.55 : 1) * finishOpacity;
       mat.opacity = THREE.MathUtils.lerp(mat.opacity, targetOpacity, frameDelta * 10);
+    }
+
+    if (meshRef.current) {
+      meshRef.current.renderOrder = renderOrder;
     }
 
     const finishMat = finishMeshRef.current?.material;
@@ -241,8 +249,8 @@ export default function Sticker3D({
       finishMat.uniforms.finishOpacity.value = dimmed ? 0.35 : 1;
     }
 
-    if (meshRef.current) {
-      meshRef.current.renderOrder = hovered || infoActive ? 20 : 5;
+    if (finishMeshRef.current) {
+      finishMeshRef.current.renderOrder = renderOrder + 1;
     }
 
     punch.current = THREE.MathUtils.lerp(punch.current, 0, frameDelta * 7);
@@ -299,7 +307,7 @@ export default function Sticker3D({
             ref={finishMeshRef}
             material={finishMaterial}
             position={[0, 0, 0.012]}
-            renderOrder={10}
+            renderOrder={6}
             raycast={noopRaycast}
           >
             <planeGeometry args={[STICKER_SIZE, STICKER_SIZE]} />

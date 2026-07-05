@@ -1,4 +1,4 @@
-export type LaminateId = "clear" | "matte" | "laser-rainbow";
+export type LaminateId = "clear" | "sandy-glitter" | "laser-rainbow";
 
 export type Laminate = {
   id: LaminateId;
@@ -18,11 +18,11 @@ export const LAMINATES: Record<LaminateId, Laminate> = {
     description: "Bright color with a smooth reflective clear finish.",
     priceAdjustment: 0,
   },
-  matte: {
-    id: "matte",
-    label: "Matte",
-    shortLabel: "Matte",
-    description: "Soft, low-glare finish with a lightly textured look.",
+  "sandy-glitter": {
+    id: "sandy-glitter",
+    label: "Sandy Glitter",
+    shortLabel: "Sandy",
+    description: "Silver-gray glitter on a fine sandy texture.",
     priceAdjustment: 0,
   },
   "laser-rainbow": {

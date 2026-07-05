@@ -35,7 +35,7 @@ export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
     faq: [
       {
         q: "How do I add a sticker?",
-        a: "Tap any sticker in the 3D rack for a quick add, or open its details to choose Clear Gloss, Matte, or Laser Rainbow first.",
+        a: "Tap any sticker in the 3D rack for a quick add, or open its details to choose Clear Gloss, Sandy Glitter, or Laser Rainbow first.",
       },
       {
         q: "How do I read sticker details?",
@@ -47,7 +47,7 @@ export const SITE_PANELS: Record<SitePanelId, SitePanel> = {
       },
       {
         q: "What material are the stickers?",
-        a: "They are about 2 inches, printed on white vinyl sticker paper, and available with Clear Gloss, Matte, or Laser Rainbow laminate.",
+        a: "They are about 2 inches, printed on white vinyl sticker paper, and available with Clear Gloss, Sandy Glitter, or Laser Rainbow laminate.",
       },
       {
         q: "Do you offer refunds?",

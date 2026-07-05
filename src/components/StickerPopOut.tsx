@@ -78,11 +78,8 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
     damping: 26,
   });
   const overlayOpacity =
-    laminateId === "laser-rainbow"
-      ? [0.34, 0.72]
-      : laminateId === "matte"
-        ? [0.1, 0.2]
-        : [0.05, 0.42];
+    laminateId === "laser-rainbow" ? [0.22, 0.58] : [0.05, 0.42];
+  const showFinishShine = laminateId !== "sandy-glitter";
   const shineOpacity = useSpring(useTransform(isActive, [0, 1], overlayOpacity), {
     stiffness: 300,
     damping: 30,
@@ -207,16 +204,38 @@ function StickerPopOutHero({ sticker, laminateId }: HeroProps) {
                   height: artFrame.height,
                 }}
               >
-                <motion.span
-                  className={`sticker-popout-hero-shine sticker-popout-hero-shine--${laminateId}`}
-                  aria-hidden="true"
-                  style={{
-                    opacity: shineOpacity,
-                    backgroundPosition: shinePosition,
-                    WebkitMaskImage: `url(${imageUrl})`,
-                    maskImage: `url(${imageUrl})`,
-                  }}
-                />
+                {laminateId === "sandy-glitter" && (
+                  <span
+                    className="sticker-popout-hero-sandy"
+                    aria-hidden="true"
+                    style={{
+                      WebkitMaskImage: `url(${imageUrl})`,
+                      maskImage: `url(${imageUrl})`,
+                    }}
+                  />
+                )}
+                {laminateId === "laser-rainbow" && (
+                  <span
+                    className="sticker-popout-hero-rainbow"
+                    aria-hidden="true"
+                    style={{
+                      WebkitMaskImage: `url(${imageUrl})`,
+                      maskImage: `url(${imageUrl})`,
+                    }}
+                  />
+                )}
+                {showFinishShine && (
+                  <motion.span
+                    className={`sticker-popout-hero-shine sticker-popout-hero-shine--${laminateId}`}
+                    aria-hidden="true"
+                    style={{
+                      opacity: shineOpacity,
+                      backgroundPosition: shinePosition,
+                      WebkitMaskImage: `url(${imageUrl})`,
+                      maskImage: `url(${imageUrl})`,
+                    }}
+                  />
+                )}
               </div>
             )}
           </div>
