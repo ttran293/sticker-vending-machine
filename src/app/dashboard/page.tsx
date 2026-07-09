@@ -6,6 +6,7 @@ import { isAdminAuthenticated } from "@/lib/auth";
 import { readMachineLayout } from "@/lib/machineSlots";
 import { getAdminReviewImages } from "@/lib/reviewImages";
 import { getAllAvailableStickers } from "@/lib/stickerInventory";
+import { getAdminCoupons } from "@/lib/couponStore";
 import { getStickerAssetMode } from "@/lib/s3/stickerAssets";
 
 export const dynamic = "force-dynamic";
@@ -15,11 +16,12 @@ export default async function DashboardPage() {
     redirect("/admin");
   }
 
-  const [entries, layout, assetMode, reviewImages] = await Promise.all([
+  const [entries, layout, assetMode, reviewImages, coupons] = await Promise.all([
     getAllAvailableStickers(),
     readMachineLayout(),
     getStickerAssetMode(),
     getAdminReviewImages(),
+    getAdminCoupons(),
   ]);
 
   return (
@@ -38,6 +40,7 @@ export default async function DashboardPage() {
           entries={entries}
           initialLayout={layout}
           reviewImages={reviewImages}
+          initialCoupons={coupons}
         />
         </div>
       </main>

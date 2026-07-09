@@ -5,7 +5,8 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import { motion, AnimatePresence } from "framer-motion";
 import { type Sticker } from "@/data/stickers";
-import { applyCoupon, resolveCoupon, type Coupon } from "@/data/coupons";
+import { applyCoupon, type Coupon } from "@/data/coupons";
+import { buildCouponLookup, resolveCoupon } from "@/lib/couponStore";
 import CheckoutModal, { type CartLine } from "./CheckoutModal";
 import StickerPopOut from "./StickerPopOut";
 import SidebarPanel from "./SidebarPanel";
@@ -64,9 +65,11 @@ function StickerThumb({
 export default function VendingMachine({
   stickers,
   reviewPhotos = [],
+  coupons = [],
 }: {
   stickers: Sticker[];
   reviewPhotos?: ReviewImage[];
+  coupons?: Coupon[];
 }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [dispensedItems, setDispensedItems] = useState<DispensedItem[]>([]);
@@ -83,6 +86,7 @@ export default function VendingMachine({
     Record<string, LaminateId>
   >({});
   const dispenseSeq = useRef(0);
+  const couponLookup = useMemo(() => buildCouponLookup(coupons), [coupons]);
 
   useEffect(() => {
     let active = true;
@@ -217,7 +221,7 @@ export default function VendingMachine({
   }, [totalItems]);
 
   const handleApplyCoupon = () => {
-    const coupon = resolveCoupon(couponInput);
+    const coupon = resolveCoupon(couponInput, couponLookup);
     if (!coupon) {
       setAppliedCoupon(null);
       setCouponError("invalid code");

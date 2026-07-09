@@ -1,15 +1,17 @@
 "use client";
 
 import { useEffect, useId, useState } from "react";
+import CouponsSection from "@/components/CouponsSection";
 import StickerCatalogGrid from "@/components/StickerCatalogGrid";
 import ReviewImagesSection from "@/components/ReviewImagesSection";
 import StickerUploadPanel from "@/components/StickerUploadPanel";
+import type { Coupon } from "@/data/coupons";
 import type { CatalogEntry } from "@/data/stickers";
 import type { MachineLayout } from "@/lib/machineLayoutShared";
 import type { ReviewImage } from "@/lib/reviewImages";
 import styles from "./DashboardTabs.module.css";
 
-type DashboardTab = "stickers" | "reviews";
+type DashboardTab = "stickers" | "reviews" | "coupons";
 
 const DASHBOARD_TAB_STORAGE_KEY = "dashboard-active-tab";
 
@@ -17,19 +19,27 @@ function readStoredTab(): DashboardTab {
   if (typeof window === "undefined") return "stickers";
 
   const saved = window.localStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
-  return saved === "reviews" ? "reviews" : "stickers";
+  if (saved === "reviews" || saved === "coupons") return saved;
+  return "stickers";
 }
 
 type Props = {
   entries: CatalogEntry[];
   initialLayout: MachineLayout;
   reviewImages: ReviewImage[];
+  initialCoupons: Coupon[];
 };
 
-export default function DashboardTabs({ entries, initialLayout, reviewImages }: Props) {
+export default function DashboardTabs({
+  entries,
+  initialLayout,
+  reviewImages,
+  initialCoupons,
+}: Props) {
   const baseId = useId();
   const stickersPanelId = `${baseId}-stickers-panel`;
   const reviewsPanelId = `${baseId}-reviews-panel`;
+  const couponsPanelId = `${baseId}-coupons-panel`;
   const [activeTab, setActiveTab] = useState<DashboardTab>("stickers");
 
   useEffect(() => {
@@ -66,6 +76,17 @@ export default function DashboardTabs({ entries, initialLayout, reviewImages }: 
         >
           Review images
         </button>
+        <button
+          type="button"
+          role="tab"
+          id={`${baseId}-coupons-tab`}
+          aria-selected={activeTab === "coupons"}
+          aria-controls={couponsPanelId}
+          className={`${styles.tab}${activeTab === "coupons" ? ` ${styles.tabActive}` : ""}`}
+          onClick={() => selectTab("coupons")}
+        >
+          Coupons
+        </button>
       </div>
 
       <div
@@ -87,6 +108,16 @@ export default function DashboardTabs({ entries, initialLayout, reviewImages }: 
         className={`${styles.panel}${activeTab !== "reviews" ? ` ${styles.panelHidden}` : ""}`}
       >
         <ReviewImagesSection initialImages={reviewImages} />
+      </div>
+
+      <div
+        id={couponsPanelId}
+        role="tabpanel"
+        aria-labelledby={`${baseId}-coupons-tab`}
+        hidden={activeTab !== "coupons"}
+        className={`${styles.panel}${activeTab !== "coupons" ? ` ${styles.panelHidden}` : ""}`}
+      >
+        <CouponsSection initialCoupons={initialCoupons} />
       </div>
     </>
   );
