@@ -543,36 +543,64 @@ export default function VendingMachine({
               rel="noopener noreferrer"
               className="footer-link"
             >
-              Nam
+              <span className="footer-link-label footer-link-label-always">Nam</span>
             </a>
             <button
               type="button"
               className="footer-link"
               onClick={() => setSidebarPanel("about")}
+              aria-label="About"
+              title="About"
             >
-              About
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <line x1="12" y1="11" x2="12" y2="16.5" />
+                <circle cx="12" cy="7.5" r="0.5" fill="currentColor" />
+              </svg>
+              <span className="footer-link-label">About</span>
             </button>
             <a
               href="https://www.instagram.com/stickervendingmachine1/"
               target="_blank"
               rel="noopener noreferrer"
               className="footer-link"
+              aria-label="Instagram"
+              title="Instagram"
             >
-              Instagram
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <rect x="3.5" y="3.5" width="17" height="17" rx="4.5" />
+                <circle cx="12" cy="12" r="4" />
+                <circle cx="17" cy="7" r="0.5" fill="currentColor" />
+              </svg>
+              <span className="footer-link-label">Instagram</span>
             </a>
             <button
               type="button"
               className="footer-link"
               onClick={() => setSidebarPanel("offTheRack")}
+              aria-label="Off the Rack"
+              title="Off the Rack"
             >
-              Off the Rack
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <rect x="3.5" y="4.5" width="17" height="15" rx="2" />
+                <circle cx="9" cy="10" r="1.75" />
+                <path d="M3.5 17l4.5-4 3.5 3 4-4.5 5 5.5" />
+              </svg>
+              <span className="footer-link-label">Off the Rack</span>
             </button>
             <button
               type="button"
               className="footer-link"
               onClick={() => setSidebarPanel("faq")}
+              aria-label="FAQ"
+              title="FAQ"
             >
-              FAQ
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="9" />
+                <path d="M9.5 9.5a2.5 2.5 0 1 1 3.6 2.24c-.75.37-1.1.93-1.1 1.76v.25" />
+                <circle cx="12" cy="16.75" r="0.5" fill="currentColor" />
+              </svg>
+              <span className="footer-link-label">FAQ</span>
             </button>
             <LoginControl />
           </span>

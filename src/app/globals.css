@@ -1570,13 +1570,17 @@ body {
 
 .machine-footer-content {
   display: inline-flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  gap: 2;
+  row-gap: 8px;
   white-space: nowrap;
 }
 
 .footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   border: none;
   background: none;
   padding: 0;
@@ -1584,16 +1588,50 @@ body {
   font-size: inherit;
   letter-spacing: inherit;
   color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 2px;
+  text-decoration: none;
   cursor: pointer;
   transition: color 0.12s ease;
   margin-right: 1rem;
   margin-left: 1rem;
 }
 
+.footer-link svg {
+  width: 13px;
+  height: 13px;
+  flex-shrink: 0;
+}
+
+.footer-link-label {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .footer-link:hover {
   color: var(--muted);
+}
+
+@media (max-width: 560px) {
+  .machine-footer {
+    font-size: 10px;
+  }
+
+  .footer-link {
+    margin-right: 0.6rem;
+    margin-left: 0.6rem;
+  }
+
+  .footer-link svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .footer-link-label {
+    display: none;
+  }
+
+  .footer-link-label-always {
+    display: inline;
+  }
 }
 
 /* ---------- Admin / dashboard ---------- */
