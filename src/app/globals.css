@@ -1473,33 +1473,22 @@ body {
   color: var(--paper);
 }
 
-.coupon-applied {
+.coupon-applied-chip {
+  flex: 1;
+  min-width: 0;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 8px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  padding: 8px 10px;
   font-size: 11px;
-  letter-spacing: 0.5px;
-  color: var(--ink);
-}
-
-.coupon-remove {
-  border: none;
-  background: none;
-  padding: 0;
-  font: inherit;
-  font-size: 10px;
+  font-weight: 700;
   letter-spacing: 1px;
   text-transform: uppercase;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.coupon-remove:hover {
   color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .coupon-error {
@@ -1519,14 +1508,12 @@ body {
   margin-bottom: 12px;
 }
 
-.cart-total--sub,
-.cart-total--discount {
+.cart-total-strike {
+  margin-right: 8px;
   font-size: 13px;
-  margin-bottom: 6px;
-}
-
-.cart-total--discount {
+  font-weight: 700;
   color: var(--muted);
+  text-decoration: line-through;
 }
 
 .checkout-btn {

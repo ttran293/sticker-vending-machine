@@ -455,58 +455,47 @@ export default function VendingMachine({
                   <label className="coupon-label" htmlFor="cart-coupon">
                     COUPON
                   </label>
-                  <div className="coupon-row">
-                    <input
-                      id="cart-coupon"
-                      type="text"
-                      className="coupon-input"
-                      placeholder="ENTER CODE"
-                      value={couponInput}
-                      onChange={(e) => {
-                        setCouponInput(e.target.value.toUpperCase());
-                        if (couponError) setCouponError(null);
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleApplyCoupon();
-                      }}
-                    />
-                    <button
-                      type="button"
-                      className="coupon-apply"
-                      onClick={handleApplyCoupon}
-                    >
-                      APPLY
-                    </button>
-                  </div>
-                  {appliedCoupon && (
-                    <div className="coupon-applied">
-                      <span>
+                  {appliedCoupon ? (
+                    <div className="coupon-row">
+                      <span className="coupon-applied-chip">
                         {appliedCoupon.code} · {appliedCoupon.label}
                       </span>
                       <button
                         type="button"
-                        className="coupon-remove"
+                        className="coupon-apply"
                         onClick={handleRemoveCoupon}
                       >
-                        remove
+                        REMOVE
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="coupon-row">
+                      <input
+                        id="cart-coupon"
+                        type="text"
+                        className="coupon-input"
+                        placeholder="ENTER CODE"
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          if (couponError) setCouponError(null);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") handleApplyCoupon();
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className="coupon-apply"
+                        onClick={handleApplyCoupon}
+                      >
+                        APPLY
                       </button>
                     </div>
                   )}
                   {couponError && <p className="coupon-error">{couponError}</p>}
                 </div>
 
-                {appliedCoupon && discount > 0 && (
-                  <>
-                    <div className="cart-total cart-total--sub">
-                      <span>SUBTOTAL</span>
-                      <span>${totalPrice.toFixed(2)}</span>
-                    </div>
-                    <div className="cart-total cart-total--discount">
-                      <span>DISCOUNT</span>
-                      <span>&minus;${discount.toFixed(2)}</span>
-                    </div>
-                  </>
-                )}
                 <div className="cart-total">
                   <span>TOTAL</span>
                   <motion.span
@@ -514,6 +503,11 @@ export default function VendingMachine({
                     initial={{ scale: 1.15 }}
                     animate={{ scale: 1 }}
                   >
+                    {appliedCoupon && discount > 0 && (
+                      <span className="cart-total-strike">
+                        ${totalPrice.toFixed(2)}
+                      </span>
+                    )}
                     ${checkoutTotal.toFixed(2)}
                   </motion.span>
                 </div>
