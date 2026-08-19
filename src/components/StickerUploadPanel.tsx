@@ -18,6 +18,7 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
   const [useCustomFolder, setUseCustomFolder] = useState(false);
   const [replaceExisting, setReplaceExisting] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [stickerName, setStickerName] = useState("");
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [previewSize, setPreviewSize] = useState<{ w: number; h: number } | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -36,7 +37,17 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
       return null;
     });
     setSelectedFile(null);
+    setStickerName("");
     setPreviewSize(null);
+  }
+
+  function formatNameFromFileName(fileName: string) {
+    return fileName
+      .replace(/\.[^.]+$/, "")
+      .replace(/[-_]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/\b\w/g, (char) => char.toUpperCase());
   }
 
   function handleFileChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -45,6 +56,7 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
     setSuccess(null);
     setPreviewSize(null);
     setSelectedFile(file ?? null);
+    setStickerName(file ? formatNameFromFileName(file.name) : "");
 
     setPreviewUrl((current) => {
       if (current) URL.revokeObjectURL(current);
@@ -77,9 +89,16 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
       return;
     }
 
+    const name = stickerName.trim();
+    if (!name) {
+      setError("Enter a sticker name.");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("file", file);
     formData.append("folder", targetFolder);
+    formData.append("name", name);
     if (replaceExisting) formData.append("replace", "true");
 
     setUploading(true);
@@ -206,6 +225,19 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
               )}
             </div>
 
+            <label className={styles.field}>
+              <span className={styles.label}>Sticker name</span>
+              <input
+                type="text"
+                value={stickerName}
+                onChange={(event) => setStickerName(event.target.value)}
+                placeholder="Sticker display name"
+                maxLength={80}
+                disabled={uploading}
+                className={styles.control}
+              />
+            </label>
+
             <label className={styles.replace}>
               <input
                 type="checkbox"
@@ -251,6 +283,10 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
             <div className={styles.previewMetaRow}>
               <dt>Folder</dt>
               <dd>{targetFolderLabel}</dd>
+            </div>
+            <div className={styles.previewMetaRow}>
+              <dt>Name</dt>
+              <dd>{stickerName.trim() || "—"}</dd>
             </div>
           </dl>
         </aside>

@@ -3,7 +3,11 @@ import {
   catalogMetadataByImage,
   type Sticker,
 } from "@/data/stickers";
-import { fallbackCatalogEntry } from "@/lib/stickerMetadata";
+import {
+  applyStickerNameOverride,
+  fallbackCatalogEntry,
+  getStickerNameOverrides,
+} from "@/lib/stickerMetadata";
 import {
   normalizeStickerPath,
   resolveStickerImageUrl,
@@ -135,6 +139,7 @@ export function applySlotAssignment(
 export function buildMachineStickers(
   layout: MachineLayout,
   assetMode: StickerAssetMode = "local",
+  nameOverrides = new Map<string, string>(),
 ): Sticker[] {
   return layout.map((image, index) => {
     const row = Math.floor(index / GRID_COLS);
@@ -154,7 +159,10 @@ export function buildMachineStickers(
       };
     }
 
-    const meta = catalogMetadataByImage[image] ?? fallbackCatalogEntry(image);
+    const meta = applyStickerNameOverride(
+      catalogMetadataByImage[image] ?? fallbackCatalogEntry(image),
+      nameOverrides,
+    );
 
     return {
       id: `${meta.slug}-${row}-${col}`,
@@ -170,9 +178,10 @@ export function buildMachineStickers(
 }
 
 export async function getMachineStickers() {
-  const [layout, assetMode] = await Promise.all([
+  const [layout, assetMode, nameOverrides] = await Promise.all([
     readMachineLayout(),
     getStickerAssetMode(),
+    getStickerNameOverrides(),
   ]);
-  return buildMachineStickers(layout, assetMode);
+  return buildMachineStickers(layout, assetMode, nameOverrides);
 }

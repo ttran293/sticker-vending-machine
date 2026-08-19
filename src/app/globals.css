@@ -1917,6 +1917,31 @@ body {
   transition: background 0.14s ease, color 0.14s ease;
 }
 
+.catalog-rename-btn {
+  width: 100%;
+  padding: 9px 12px;
+  border: none;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+}
+
+.catalog-rename-btn:hover:not(:disabled) {
+  background: var(--hair);
+}
+
+.catalog-rename-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .catalog-delete-btn:hover:not(:disabled) {
   background: #fff0f0;
 }
@@ -1934,7 +1959,6 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  padding: 0 20px 20px;
 }
 
 .catalog-delete-confirm {
@@ -1945,6 +1969,70 @@ body {
 .catalog-delete-confirm:hover:not(:disabled) {
   background: #7d2525;
   border-color: #7d2525;
+}
+
+.catalog-rename-dialog {
+  max-width: 460px;
+}
+
+.catalog-rename-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 4px;
+}
+
+.catalog-rename-field label {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.catalog-rename-field input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 11px 12px;
+  border: 2px solid var(--ink);
+  background: var(--paper);
+  color: var(--ink);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.catalog-rename-field input:disabled {
+  opacity: 0.7;
+}
+
+.catalog-rename-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.catalog-rename-actions .btn-primary,
+.catalog-rename-actions .btn-ghost {
+  flex: 0 1 160px;
+  min-width: 0;
+}
+
+@media (max-width: 560px) {
+  .catalog-rename-actions {
+    flex-direction: column;
+  }
+
+  .catalog-rename-actions .btn-primary,
+  .catalog-rename-actions .btn-ghost {
+    flex: none;
+    width: 100%;
+  }
 }
 
 .catalog-assign-btn {

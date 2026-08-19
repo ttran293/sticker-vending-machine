@@ -4,7 +4,11 @@ import {
   catalogMetadataByImage,
   type CatalogEntry,
 } from "@/data/stickers";
-import { fallbackCatalogEntry } from "@/lib/stickerMetadata";
+import {
+  applyStickerNameOverride,
+  fallbackCatalogEntry,
+  getStickerNameOverrides,
+} from "@/lib/stickerMetadata";
 import { listStickerPathsFromS3, getStickerAssetMode } from "@/lib/s3/stickerAssets";
 
 const STICKER_ROOT = path.join(process.cwd(), "public", "stickers");
@@ -56,7 +60,15 @@ async function listStickerPaths(): Promise<string[]> {
 
 /** Every sticker image in S3 (when configured) or public/stickers, merged with known metadata */
 export async function getAllAvailableStickers(): Promise<CatalogEntry[]> {
-  const images = await listStickerPaths();
+  const [images, nameOverrides] = await Promise.all([
+    listStickerPaths(),
+    getStickerNameOverrides(),
+  ]);
 
-  return images.map((image) => catalogMetadataByImage[image] ?? fallbackCatalogEntry(image));
+  return images.map((image) =>
+    applyStickerNameOverride(
+      catalogMetadataByImage[image] ?? fallbackCatalogEntry(image),
+      nameOverrides,
+    ),
+  );
 }

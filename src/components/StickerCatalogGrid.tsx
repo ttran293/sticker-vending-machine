@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, startTransition } from "react";
+import { useCallback, useEffect, useId, useMemo, useState, startTransition } from "react";
 import { createPortal } from "react-dom";
 import { GRID_COLS, type CatalogEntry } from "@/data/stickers";
 import {
@@ -22,6 +22,7 @@ function StickerCatalogCard({
   entry,
   slotCode,
   onAssign,
+  onRename,
   onDelete,
   deleting,
   priorityLoad = false,
@@ -29,6 +30,7 @@ function StickerCatalogCard({
   entry: CatalogEntry;
   slotCode: string | null;
   onAssign: () => void;
+  onRename: () => void;
   onDelete: () => void;
   deleting: boolean;
   priorityLoad?: boolean;
@@ -88,6 +90,17 @@ function StickerCatalogCard({
         </button>
         <button
           type="button"
+          className="catalog-rename-btn"
+          onClick={(event) => {
+            event.stopPropagation();
+            onRename();
+          }}
+          disabled={deleting}
+        >
+          Rename
+        </button>
+        <button
+          type="button"
           className="catalog-delete-btn"
           onClick={(event) => {
             event.stopPropagation();
@@ -99,6 +112,106 @@ function StickerCatalogCard({
         </button>
       </div>
     </article>
+  );
+}
+
+type RenameTarget = {
+  entry: CatalogEntry;
+};
+
+function RenameStickerDialog({
+  target,
+  saving,
+  error,
+  onClose,
+  onSave,
+}: {
+  target: RenameTarget;
+  saving: boolean;
+  error: string | null;
+  onClose: () => void;
+  onSave: (name: string) => void;
+}) {
+  const nameInputId = useId();
+  const [name, setName] = useState(target.entry.name);
+
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && !saving) onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose, saving]);
+
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, []);
+
+  return createPortal(
+    <div className="assign-slot-overlay">
+      <button
+        type="button"
+        className="assign-slot-backdrop"
+        aria-label="Close rename dialog"
+        onClick={onClose}
+        disabled={saving}
+      />
+      <form
+        className="assign-slot-dialog catalog-rename-dialog"
+        aria-labelledby="rename-sticker-title"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSave(name);
+        }}
+      >
+        <header className="assign-slot-dialog-head">
+          <div>
+            <p className="assign-slot-dialog-eyebrow">Sticker name</p>
+            <h3 id="rename-sticker-title" className="assign-slot-dialog-title">
+              Rename {target.entry.name}
+            </h3>
+            <p className="assign-slot-dialog-subtitle">{target.entry.image}</p>
+          </div>
+          <button
+            type="button"
+            className="assign-slot-close"
+            onClick={onClose}
+            aria-label="Close"
+            disabled={saving}
+          >
+            ×
+          </button>
+        </header>
+
+        {error && <p className="assign-slot-error">{error}</p>}
+
+        <div className="catalog-rename-field">
+          <label htmlFor={nameInputId}>Name</label>
+          <input
+            id={nameInputId}
+            value={name}
+            onChange={(event) => setName(event.target.value)}
+            maxLength={80}
+            autoFocus
+            disabled={saving}
+          />
+        </div>
+
+        <div className="catalog-rename-actions">
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={saving}>
+            Cancel
+          </button>
+          <button type="submit" className="btn-primary" disabled={saving}>
+            {saving ? "Saving…" : "Save name"}
+          </button>
+        </div>
+      </form>
+    </div>,
+    document.body,
   );
 }
 
@@ -387,40 +500,54 @@ type Props = {
 
 export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
   const router = useRouter();
+  const [renamedEntries, setRenamedEntries] = useState<Record<string, string>>({});
   const [layout, setLayout] = useState(initialLayout);
   const [assignTarget, setAssignTarget] = useState<AssignTarget | null>(null);
+  const [renameTarget, setRenameTarget] = useState<RenameTarget | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<PendingDelete | null>(null);
   const [pendingReplace, setPendingReplace] = useState<PendingReplace | null>(null);
   const [savingSlot, setSavingSlot] = useState<number | null>(null);
+  const [renamingImage, setRenamingImage] = useState<string | null>(null);
+  const [renameError, setRenameError] = useState<string | null>(null);
   const [deletingImage, setDeletingImage] = useState<string | null>(null);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  useEffect(() => {
-    setLayout(initialLayout);
-  }, [initialLayout]);
+  const catalogEntries = useMemo(
+    () =>
+      entries.map((entry) => {
+        const name = renamedEntries[entry.image];
+        return name ? { ...entry, name } : entry;
+      }),
+    [entries, renamedEntries],
+  );
 
   const catalogByImage = useMemo(
-    () => new Map(entries.map((entry) => [entry.image, entry])),
-    [entries],
+    () => new Map(catalogEntries.map((entry) => [entry.image, entry])),
+    [catalogEntries],
   );
 
   const slotByImage = getMachineSlotByImageFromLayout(layout);
-  const inMachineCount = entries.filter((entry) => slotByImage.has(entry.image)).length;
+  const inMachineCount = catalogEntries.filter((entry) => slotByImage.has(entry.image)).length;
 
-  const grouped = entries.reduce<Record<string, CatalogEntry[]>>((acc, entry) => {
+  const grouped = catalogEntries.reduce<Record<string, CatalogEntry[]>>((acc, entry) => {
     if (!acc[entry.category]) acc[entry.category] = [];
     acc[entry.category].push(entry);
     return acc;
   }, {});
 
-  const sortedGroups = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b));
-  let visibleCardIndex = 0;
+  const sortedGroups = Object.entries(grouped)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([category, categoryEntries]) => ({
+      category,
+      entries: categoryEntries,
+      startIndex: 0,
+    }));
+
+  let nextStartIndex = 0;
+  for (const group of sortedGroups) {
+    group.startIndex = nextStartIndex;
+    nextStartIndex += group.entries.length;
+  }
 
   const closeDialog = useCallback(() => {
     setAssignTarget(null);
@@ -567,24 +694,66 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
     }
   }
 
+  async function handleRenameSticker(name: string) {
+    if (!renameTarget) return;
+
+    setRenamingImage(renameTarget.entry.image);
+    setRenameError(null);
+
+    try {
+      const response = await fetch("/api/admin/stickers", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ image_path: renameTarget.entry.image, name }),
+      });
+
+      let data: { error?: string; name?: string; image_path?: string } = {};
+      try {
+        const raw = await response.text();
+        if (raw.trim()) data = JSON.parse(raw) as typeof data;
+      } catch {
+        if (response.ok) {
+          throw new Error("Server returned an invalid response.");
+        }
+      }
+
+      if (!response.ok || !data.name || !data.image_path) {
+        setRenameError(
+          data.error ??
+            (response.status === 401
+              ? "You are not logged in. Refresh and sign in again."
+              : `Rename failed (${response.status}).`),
+        );
+        return;
+      }
+
+      setRenamedEntries((current) => ({ ...current, [data.image_path as string]: data.name as string }));
+      setRenameTarget(null);
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setRenameError(err instanceof Error ? err.message : "Rename failed.");
+    } finally {
+      setRenamingImage(null);
+    }
+  }
+
   return (
     <>
       <section className="catalog-section">
         <div className="catalog-section-head">
           <h2 className="catalog-section-title">All available stickers</h2>
           <p className="catalog-section-count">
-            {entries.length} in folder · {inMachineCount} in machine ·{" "}
-            {entries.length - inMachineCount} backlog
+            {catalogEntries.length} in folder · {inMachineCount} in machine ·{" "}
+            {catalogEntries.length - inMachineCount} backlog
           </p>
         </div>
 
-        {sortedGroups.map(([category, categoryEntries]) => (
+        {sortedGroups.map(({ category, entries: categoryEntries, startIndex }) => (
           <div key={category} className="catalog-group">
             <h3 className="catalog-group-title">{category}</h3>
             <div className="catalog-grid">
-              {categoryEntries.map((entry) => {
-                const priorityLoad = visibleCardIndex < 6;
-                visibleCardIndex += 1;
+              {categoryEntries.map((entry, index) => {
+                const priorityLoad = startIndex + index < 6;
 
                 return (
                   <StickerCatalogCard
@@ -601,6 +770,10 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
                         currentSlotCode: slotByImage.get(entry.image) ?? null,
                       });
                     }}
+                    onRename={() => {
+                      setRenameError(null);
+                      setRenameTarget({ entry });
+                    }}
                     onDelete={() => {
                       setDeleteError(null);
                       setDeleteTarget({
@@ -616,7 +789,21 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
         ))}
       </section>
 
-      {mounted && deleteTarget && (
+      {renameTarget && (
+        <RenameStickerDialog
+          target={renameTarget}
+          saving={renamingImage === renameTarget.entry.image}
+          error={renameError}
+          onClose={() => {
+            if (renamingImage) return;
+            setRenameTarget(null);
+            setRenameError(null);
+          }}
+          onSave={handleRenameSticker}
+        />
+      )}
+
+      {deleteTarget && (
         <DeleteStickerDialog
           target={deleteTarget}
           deleting={deletingImage === deleteTarget.entry.image}
@@ -630,7 +817,7 @@ export default function StickerCatalogGrid({ entries, initialLayout }: Props) {
         />
       )}
 
-      {mounted && assignTarget && (
+      {assignTarget && (
         <AssignSlotDialog
           target={assignTarget}
           layout={layout}

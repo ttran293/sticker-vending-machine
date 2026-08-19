@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { catalogMetadataByImage } from "@/data/stickers";
 import { requireAdmin } from "@/lib/auth";
 import { removeImageFromAllSlots } from "@/lib/machineSlots";
-import { fallbackCatalogEntry } from "@/lib/stickerMetadata";
+import { fallbackCatalogEntry, updateStickerName } from "@/lib/stickerMetadata";
 import {
   deleteStickerFile,
   getAllowedStickerMimeTypes,
@@ -26,6 +26,7 @@ export async function POST(request: Request) {
 
   const file = formData.get("file");
   const folder = formData.get("folder");
+  const name = formData.get("name");
   const replace = formData.get("replace") === "true";
 
   if (!(file instanceof File)) {
@@ -58,11 +59,18 @@ export async function POST(request: Request) {
   try {
     const imagePath = await saveStickerFile(folder, file.name, buffer, contentType, { replace });
     const entry = catalogMetadataByImage[imagePath] ?? fallbackCatalogEntry(imagePath);
+    const nextName = typeof name === "string" && name.trim()
+      ? await updateStickerName(imagePath, name)
+      : entry.name;
 
     revalidatePath("/");
     revalidatePath("/dashboard");
 
-    return NextResponse.json({ ok: true, image_path: imagePath, entry });
+    return NextResponse.json({
+      ok: true,
+      image_path: imagePath,
+      entry: { ...entry, name: nextName },
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload failed.";
     const status = message.includes("already exists") ? 409 : 400;
@@ -99,5 +107,43 @@ export async function DELETE(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : "Delete failed.";
     return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function PATCH(request: Request) {
+  const auth = await requireAdmin();
+  if (!auth.ok) return auth.response;
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Invalid request." }, { status: 400 });
+  }
+
+  const imagePath = (body as { image_path?: unknown }).image_path;
+  const name = (body as { name?: unknown }).name;
+
+  if (typeof imagePath !== "string" || !isStickerPath(imagePath)) {
+    return NextResponse.json({ error: "Invalid sticker path." }, { status: 400 });
+  }
+
+  if (typeof name !== "string") {
+    return NextResponse.json({ error: "Sticker name is required." }, { status: 400 });
+  }
+
+  const normalized = normalizeStickerPath(imagePath);
+
+  try {
+    const nextName = await updateStickerName(normalized, name);
+
+    revalidatePath("/");
+    revalidatePath("/dashboard");
+
+    return NextResponse.json({ ok: true, image_path: normalized, name: nextName });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Rename failed.";
+    const status = message.includes("configured") ? 503 : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }
