@@ -19,10 +19,34 @@ export const STICKER_FOLDER_OPTIONS = Object.entries(CATEGORY_LABELS).map(([id, 
   label,
 }));
 
-function formatLabel(value: string) {
+export type StickerFolderOption = {
+  id: string;
+  label: string;
+};
+
+export function formatStickerLabel(value: string) {
   return value
     .replace(/[-_]+/g, " ")
     .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+export function getStickerFolderFromImage(image: string) {
+  const [folder] = image.replace(/^\/stickers\//, "").split("/");
+  return folder?.trim() || null;
+}
+
+export function buildStickerFolderOptions(entries: CatalogEntry[]): StickerFolderOption[] {
+  const optionsById = new Map<string, StickerFolderOption>(
+    STICKER_FOLDER_OPTIONS.map((option) => [option.id, option]),
+  );
+
+  for (const entry of entries) {
+    const id = getStickerFolderFromImage(entry.image);
+    if (!id || optionsById.has(id)) continue;
+    optionsById.set(id, { id, label: formatStickerLabel(id) });
+  }
+
+  return Array.from(optionsById.values()).sort((a, b) => a.label.localeCompare(b.label));
 }
 
 function slugFromImage(image: string) {
@@ -38,11 +62,11 @@ export function fallbackCatalogEntry(image: string): CatalogEntry {
   const parts = image.replace(/^\/stickers\//, "").split("/");
   const folder = parts.length > 1 ? parts[parts.length - 2] : "uncategorized";
   const filename = parts[parts.length - 1]?.replace(/\.[^.]+$/, "") ?? "sticker";
-  const category = CATEGORY_LABELS[folder] ?? formatLabel(folder);
+  const category = CATEGORY_LABELS[folder] ?? formatStickerLabel(folder);
 
   return {
     slug: slugFromImage(image),
-    name: formatLabel(filename).toUpperCase(),
+    name: formatStickerLabel(filename).toUpperCase(),
     note: "Imported from stickers folder",
     detail: `${category} sticker · about 2″ laminated vinyl`,
     price: 1,

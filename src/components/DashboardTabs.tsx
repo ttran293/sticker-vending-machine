@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useId, useSyncExternalStore } from "react";
 import CouponsSection from "@/components/CouponsSection";
 import StickerCatalogGrid from "@/components/StickerCatalogGrid";
 import ReviewImagesSection from "@/components/ReviewImagesSection";
@@ -9,11 +9,13 @@ import type { Coupon } from "@/data/coupons";
 import type { CatalogEntry } from "@/data/stickers";
 import type { MachineLayout } from "@/lib/machineLayoutShared";
 import type { ReviewImage } from "@/lib/reviewImages";
+import { buildStickerFolderOptions } from "@/lib/stickerMetadata";
 import styles from "./DashboardTabs.module.css";
 
 type DashboardTab = "stickers" | "reviews" | "coupons";
 
 const DASHBOARD_TAB_STORAGE_KEY = "dashboard-active-tab";
+const DASHBOARD_TAB_CHANGE_EVENT = "dashboard-tab-change";
 
 function readStoredTab(): DashboardTab {
   if (typeof window === "undefined") return "stickers";
@@ -21,6 +23,16 @@ function readStoredTab(): DashboardTab {
   const saved = window.localStorage.getItem(DASHBOARD_TAB_STORAGE_KEY);
   if (saved === "reviews" || saved === "coupons") return saved;
   return "stickers";
+}
+
+function subscribeToStoredTab(onStoreChange: () => void) {
+  window.addEventListener("storage", onStoreChange);
+  window.addEventListener(DASHBOARD_TAB_CHANGE_EVENT, onStoreChange);
+
+  return () => {
+    window.removeEventListener("storage", onStoreChange);
+    window.removeEventListener(DASHBOARD_TAB_CHANGE_EVENT, onStoreChange);
+  };
 }
 
 type Props = {
@@ -40,15 +52,12 @@ export default function DashboardTabs({
   const stickersPanelId = `${baseId}-stickers-panel`;
   const reviewsPanelId = `${baseId}-reviews-panel`;
   const couponsPanelId = `${baseId}-coupons-panel`;
-  const [activeTab, setActiveTab] = useState<DashboardTab>("stickers");
-
-  useEffect(() => {
-    setActiveTab(readStoredTab());
-  }, []);
+  const folderOptions = buildStickerFolderOptions(entries);
+  const activeTab = useSyncExternalStore(subscribeToStoredTab, readStoredTab, () => "stickers");
 
   function selectTab(tab: DashboardTab) {
-    setActiveTab(tab);
     window.localStorage.setItem(DASHBOARD_TAB_STORAGE_KEY, tab);
+    window.dispatchEvent(new Event(DASHBOARD_TAB_CHANGE_EVENT));
   }
 
   return (
@@ -96,7 +105,7 @@ export default function DashboardTabs({
         hidden={activeTab !== "stickers"}
         className={`${styles.panel}${activeTab !== "stickers" ? ` ${styles.panelHidden}` : ""}`}
       >
-        <StickerUploadPanel />
+        <StickerUploadPanel folderOptions={folderOptions} />
         <StickerCatalogGrid entries={entries} initialLayout={initialLayout} />
       </div>
 

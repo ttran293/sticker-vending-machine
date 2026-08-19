@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { startTransition, useEffect, useId, useRef, useState } from "react";
-import { STICKER_FOLDER_OPTIONS } from "@/lib/stickerMetadata";
+import { STICKER_FOLDER_OPTIONS, type StickerFolderOption } from "@/lib/stickerMetadata";
 import styles from "./StickerUploadPanel.module.css";
 
 type Props = {
-  folderOptions?: typeof STICKER_FOLDER_OPTIONS;
+  folderOptions?: StickerFolderOption[];
 };
 
 export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTIONS }: Props) {
@@ -83,7 +83,10 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
       return;
     }
 
-    const targetFolder = useCustomFolder ? customFolder.trim() : folder;
+    const currentFolder = folderOptions.some((option) => option.id === folder)
+      ? folder
+      : folderOptions[0]?.id ?? "hat-dog";
+    const targetFolder = useCustomFolder ? customFolder.trim() : currentFolder;
     if (!targetFolder) {
       setError("Choose or enter a folder name.");
       return;
@@ -140,9 +143,12 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
     }
   }
 
+  const currentFolder = folderOptions.some((option) => option.id === folder)
+    ? folder
+    : folderOptions[0]?.id ?? "hat-dog";
   const targetFolderLabel = useCustomFolder
     ? customFolder.trim() || "new folder"
-    : folderOptions.find((option) => option.id === folder)?.label ?? folder;
+    : folderOptions.find((option) => option.id === currentFolder)?.label ?? currentFolder;
 
   return (
     <section className={styles.panel} aria-labelledby="sticker-upload-title">
@@ -202,7 +208,7 @@ export default function StickerUploadPanel({ folderOptions = STICKER_FOLDER_OPTI
 
               {!useCustomFolder ? (
                 <select
-                  value={folder}
+                  value={currentFolder}
                   onChange={(event) => setFolder(event.target.value)}
                   disabled={uploading}
                   className={styles.control}
