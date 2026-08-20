@@ -39,6 +39,65 @@ type DispensedItem = {
   laminateId: LaminateId;
 };
 
+type StickerBundle = {
+  id: string;
+  name: string;
+  note: string;
+  match: (sticker: Sticker) => boolean;
+};
+
+const STICKER_BUNDLES: StickerBundle[] = [
+  {
+    id: "hat-dog-set",
+    name: "Hat Dog Set",
+    note: "all five hat pups",
+    match: (sticker) => sticker.id.startsWith("hat-dog-"),
+  },
+  {
+    id: "cat-climb-set",
+    name: "Cat Climb Set",
+    note: "classic wall crew",
+    match: (sticker) => sticker.id.startsWith("cat-climb-v"),
+  },
+  {
+    id: "cat-climb-exp-set",
+    name: "Cat Climb Exp Set",
+    note: "meme send pack",
+    match: (sticker) => sticker.id.startsWith("cat-climb-exp-"),
+  },
+  {
+    id: "buttercup-set",
+    name: "Buttercup Set",
+    note: "complete mood pack",
+    match: (sticker) => sticker.id.startsWith("buttercup-"),
+  },
+];
+
+export type BundleCartLine = {
+  kind: "bundle";
+  key: string;
+  bundleId: string;
+  name: string;
+  note: string;
+  laminateId: LaminateId;
+  stickers: Sticker[];
+  count: number;
+  unitPrice: number;
+  regularUnitPrice: number;
+};
+
+function getBundlePrice(stickers: Sticker[], laminateId: LaminateId) {
+  const regularPrice = stickers.reduce(
+    (sum, sticker) => sum + getVariantPrice(sticker.price, laminateId),
+    0,
+  );
+  return Math.max(0, regularPrice - 1);
+}
+
+function getBundleKey(bundleId: string, laminateId: LaminateId) {
+  return `bundle:${bundleId}:${laminateId}`;
+}
+
 function StickerThumb({
   imagePath,
   alt,
@@ -85,6 +144,7 @@ export default function VendingMachine({
   const [selectedFinishes, setSelectedFinishes] = useState<
     Record<string, LaminateId>
   >({});
+  const [bundleCounts, setBundleCounts] = useState<Record<string, number>>({});
   const dispenseSeq = useRef(0);
   const couponLookup = useMemo(() => buildCouponLookup(coupons), [coupons]);
 
@@ -145,7 +205,53 @@ export default function VendingMachine({
     setLastPicked(sticker);
   };
 
+  const addBundle = (bundle: StickerBundle, laminateId: LaminateId) => {
+    const bundleStickers = stickers.filter(
+      (sticker) => !sticker.placeholder && bundle.match(sticker),
+    );
+    if (bundleStickers.length === 0) return;
+
+    const key = getBundleKey(bundle.id, laminateId);
+    setBundleCounts((current) => ({
+      ...current,
+      [key]: (current[key] ?? 0) + 1,
+    }));
+    setDispensedItems((items) => [
+      ...bundleStickers.map((sticker) => ({
+        key: `${key}:${sticker.id}-${dispenseSeq.current++}`,
+        sticker,
+        laminateId,
+      })),
+      ...items,
+    ]);
+    setLastPicked(bundleStickers[0]);
+  };
+
   const decrement = (line: CartLine) => {
+    if (line.kind === "bundle") {
+      setDispensedItems((items) => {
+        const next = items.slice();
+        for (const sticker of line.stickers) {
+          const index = next.findIndex(
+            (item) =>
+              item.key.startsWith(`${line.key}:`) &&
+              item.sticker.id === sticker.id &&
+              item.laminateId === line.laminateId,
+          );
+          if (index !== -1) next.splice(index, 1);
+        }
+        return next;
+      });
+      setBundleCounts((current) => {
+        const next = { ...current };
+        const value = (next[line.key] ?? 0) - 1;
+        if (value <= 0) delete next[line.key];
+        else next[line.key] = value;
+        return next;
+      });
+      return;
+    }
+
     setDispensedItems((items) => {
       const next = items.slice();
       for (let i = 0; i < next.length; i += 1) {
@@ -169,6 +275,18 @@ export default function VendingMachine({
   };
 
   const removeLine = (line: CartLine) => {
+    if (line.kind === "bundle") {
+      setDispensedItems((items) =>
+        items.filter((item) => !item.key.startsWith(`${line.key}:`)),
+      );
+      setBundleCounts((current) => {
+        const next = { ...current };
+        delete next[line.key];
+        return next;
+      });
+      return;
+    }
+
     setDispensedItems((items) =>
       items.filter(
         (item) =>
@@ -184,7 +302,7 @@ export default function VendingMachine({
     setLastPicked((prev) => (prev?.id === line.sticker.id ? null : prev));
   };
 
-  const lines: CartLine[] = useMemo(
+  const stickerLines: CartLine[] = useMemo(
     () =>
       stickers
         .filter((sticker) => !sticker.placeholder)
@@ -193,18 +311,80 @@ export default function VendingMachine({
             const key = getVariantKey(sticker.id, laminateId);
             const count = counts[key] ?? 0;
             return count > 0
-              ? [{ key, sticker, laminateId, count }]
+              ? [{ kind: "sticker" as const, key, sticker, laminateId, count }]
               : [];
           }),
         ),
     [counts, stickers],
   );
 
+  const availableBundles = useMemo(
+    () =>
+      STICKER_BUNDLES.map((bundle) => {
+        const bundleStickers = stickers.filter(
+          (sticker) => !sticker.placeholder && bundle.match(sticker),
+        );
+
+        return {
+          ...bundle,
+          stickers: bundleStickers,
+        };
+      }).filter((bundle) => bundle.stickers.length >= 2),
+    [stickers],
+  );
+
+  const bundleLines: BundleCartLine[] = useMemo(
+    () =>
+      availableBundles.flatMap((bundle) => {
+        return LAMINATE_IDS.flatMap((laminateId) => {
+          const key = getBundleKey(bundle.id, laminateId);
+          const count = bundleCounts[key] ?? 0;
+          const regularUnitPrice = bundle.stickers.reduce(
+            (sum, sticker) => sum + getVariantPrice(sticker.price, laminateId),
+            0,
+          );
+
+          return count > 0
+            ? [
+                {
+                  kind: "bundle" as const,
+                  key,
+                  bundleId: bundle.id,
+                  name: bundle.name,
+                  note: bundle.note,
+                  laminateId,
+                  stickers: bundle.stickers,
+                  count,
+                  unitPrice: getBundlePrice(bundle.stickers, laminateId),
+                  regularUnitPrice,
+                },
+              ]
+            : [];
+        });
+      }),
+    [availableBundles, bundleCounts],
+  );
+
+  const infoBundle = useMemo(() => {
+    if (!infoSticker || infoSticker.placeholder) return null;
+    return availableBundles.find((bundle) =>
+      bundle.stickers.some((sticker) => sticker.id === infoSticker.id),
+    ) ?? null;
+  }, [availableBundles, infoSticker]);
+
+  const lines: CartLine[] = useMemo(
+    () => [...stickerLines, ...bundleLines],
+    [bundleLines, stickerLines],
+  );
+
   const totalItems = lines.reduce((n, l) => n + l.count, 0);
   const totalPrice = lines.reduce(
     (sum, line) =>
       sum +
-      getVariantPrice(line.sticker.price, line.laminateId) * line.count,
+      (line.kind === "bundle"
+        ? line.unitPrice
+        : getVariantPrice(line.sticker.price, line.laminateId)) *
+        line.count,
     0,
   );
   const { discount, total: checkoutTotal } = useMemo(
@@ -241,6 +421,7 @@ export default function VendingMachine({
     setCheckoutOpen(false);
     if (confirmed) {
       setCounts({});
+      setBundleCounts({});
       setDispensedItems([]);
       dispenseSeq.current = 0;
       setLastPicked(null);
@@ -385,7 +566,7 @@ export default function VendingMachine({
                   {lines.map((line) => (
                     <motion.li
                       key={line.key}
-                      className="cart-item"
+                      className={`cart-item${line.kind === "bundle" ? " cart-item--bundle" : ""}`}
                       initial={{ opacity: 0, y: 8 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -8 }}
@@ -396,28 +577,53 @@ export default function VendingMachine({
                       }}
                     >
                       <span className="cart-item-thumb">
-                        <StickerThumb
-                          imagePath={line.sticker.image}
-                          alt={line.sticker.name}
-                          width={40}
-                          height={40}
-                          laminateId={line.laminateId}
-                        />
+                        {line.kind === "bundle" ? (
+                          <span className="cart-bundle-thumb-stack">
+                            {line.stickers.slice(0, 3).map((sticker) => (
+                              <img
+                                key={sticker.id}
+                                src={sticker.image}
+                                alt={sticker.name}
+                              />
+                            ))}
+                          </span>
+                        ) : (
+                          <StickerThumb
+                            imagePath={line.sticker.image}
+                            alt={line.sticker.name}
+                            width={40}
+                            height={40}
+                            laminateId={line.laminateId}
+                          />
+                        )}
                       </span>
                       <span className="cart-item-info">
-                        <strong>{line.sticker.name}</strong>
+                        <strong>
+                          {line.kind === "bundle" ? line.name : line.sticker.name}
+                        </strong>
                         <small>
                           <span className="cart-item-finish">
                             <LaminateSwatch laminateId={line.laminateId} />
                             {LAMINATES[line.laminateId].label}
                           </span>
                           <span className="cart-item-unit-price">
-                            $
-                            {getVariantPrice(
-                              line.sticker.price,
-                              line.laminateId,
-                            ).toFixed(2)}{" "}
-                            ea.
+                            {line.kind === "bundle" ? (
+                              <>
+                                <span className="cart-item-strike">
+                                  ${line.regularUnitPrice.toFixed(2)}
+                                </span>
+                                ${line.unitPrice.toFixed(2)} set
+                              </>
+                            ) : (
+                              <>
+                                $
+                                {getVariantPrice(
+                                  line.sticker.price,
+                                  line.laminateId,
+                                ).toFixed(2)}{" "}
+                                ea.
+                              </>
+                            )}
                           </span>
                         </small>
                       </span>
@@ -430,7 +636,16 @@ export default function VendingMachine({
                         </button>
                         <span>{line.count}</span>
                         <button
-                          onClick={() => add(line.sticker, line.laminateId)}
+                          onClick={() => {
+                            if (line.kind === "bundle") {
+                              const bundle = STICKER_BUNDLES.find(
+                                (item) => item.id === line.bundleId,
+                              );
+                              if (bundle) addBundle(bundle, line.laminateId);
+                            } else {
+                              add(line.sticker, line.laminateId);
+                            }
+                          }}
                           aria-label="add one"
                         >
                           +
@@ -440,7 +655,9 @@ export default function VendingMachine({
                         type="button"
                         className="cart-item-remove"
                         onClick={() => removeLine(line)}
-                        aria-label={`Remove all ${line.sticker.name} in ${LAMINATES[line.laminateId].label} from cart`}
+                        aria-label={`Remove all ${
+                          line.kind === "bundle" ? line.name : line.sticker.name
+                        } in ${LAMINATES[line.laminateId].label} from cart`}
                         title="Remove row"
                       >
                         &times;
@@ -632,6 +849,35 @@ export default function VendingMachine({
               }
               onClose={() => setInfoSticker(null)}
               onAddToCart={(laminateId) => add(infoSticker, laminateId)}
+              bundleOffer={
+                infoBundle
+                  ? {
+                      name: infoBundle.name,
+                      stickerCount: infoBundle.stickers.length,
+                      unitPrice: getBundlePrice(
+                        infoBundle.stickers,
+                        getSelectedFinish(infoSticker.id),
+                      ),
+                      regularUnitPrice: infoBundle.stickers.reduce(
+                        (sum, sticker) =>
+                          sum +
+                          getVariantPrice(
+                            sticker.price,
+                            getSelectedFinish(infoSticker.id),
+                          ),
+                        0,
+                      ),
+                    }
+                  : null
+              }
+              onAddBundle={
+                infoBundle
+                  ? (laminateId) => {
+                      addBundle(infoBundle, laminateId);
+                      setInfoSticker(null);
+                    }
+                  : undefined
+              }
             />
           </>
         )}

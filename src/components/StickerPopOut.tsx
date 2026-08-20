@@ -249,18 +249,27 @@ type Props = {
   sticker: Sticker;
   laminateId: LaminateId;
   selectedCount: number;
+  bundleOffer?: {
+    name: string;
+    stickerCount: number;
+    unitPrice: number;
+    regularUnitPrice: number;
+  } | null;
   onClose: () => void;
   onLaminateChange: (laminateId: LaminateId) => void;
   onAddToCart: (laminateId: LaminateId) => void;
+  onAddBundle?: (laminateId: LaminateId) => void;
 };
 
 export default function StickerPopOut({
   sticker,
   laminateId,
   selectedCount,
+  bundleOffer = null,
   onClose,
   onLaminateChange,
   onAddToCart,
+  onAddBundle,
 }: Props) {
   return (
     <motion.div
@@ -339,6 +348,23 @@ export default function StickerPopOut({
                 Add to cart
               </button>
             </div>
+            {bundleOffer && onAddBundle && (
+              <button
+                type="button"
+                className="sticker-btn sticker-popout-bundle-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddBundle(laminateId);
+                }}
+              >
+                <span>Get {bundleOffer.name}</span>
+                <small>
+                  {bundleOffer.stickerCount} stickers · $
+                  {bundleOffer.unitPrice.toFixed(2)} set · save $
+                  {(bundleOffer.regularUnitPrice - bundleOffer.unitPrice).toFixed(2)}
+                </small>
+              </button>
+            )}
           </div>
         </div>
       </motion.div>

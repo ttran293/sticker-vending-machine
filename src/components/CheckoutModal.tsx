@@ -12,13 +12,17 @@ import {
 } from "@/data/laminates";
 import { LaminateOverlay, LaminateSwatch } from "./LaminateFinish";
 import { useStickerImageWithFallback } from "@/components/StickerAssetProvider";
+import type { BundleCartLine } from "./VendingMachine";
 
-export type CartLine = {
+export type StickerCartLine = {
+  kind: "sticker";
   key: string;
   sticker: Sticker;
   laminateId: LaminateId;
   count: number;
 };
+
+export type CartLine = StickerCartLine | BundleCartLine;
 
 const ORDER_EMAIL = "thanhnamtran997@gmail.com";
 const PAYMENT_METHODS = ["Cash", "Venmo"] as const;
@@ -76,6 +80,12 @@ export default function CheckoutModal({
   const handlePaymentSelect = (method: PaymentMethod) => {
     const orderLines = lines
       .map((line) => {
+        if (line.kind === "bundle") {
+          return `- ${line.name} bundle - ${LAMINATES[line.laminateId].label} x${line.count} · $${line.unitPrice.toFixed(2)} each = $${(
+            line.unitPrice * line.count
+          ).toFixed(2)} (${line.stickers.map((sticker) => sticker.name).join(", ")})`;
+        }
+
         const unitPrice = getVariantPrice(line.sticker.price, line.laminateId);
         return `- ${line.sticker.name} - ${LAMINATES[line.laminateId].label} x${line.count} · $${unitPrice.toFixed(2)} each = $${(
           unitPrice * line.count
@@ -155,27 +165,41 @@ export default function CheckoutModal({
                   {lines.map((line) => (
                     <li key={line.key}>
                       <span className="checkout-thumb">
-                        <CheckoutLineThumb
-                          imagePath={line.sticker.image}
-                          alt={line.sticker.name}
-                          laminateId={line.laminateId}
-                        />
+                        {line.kind === "bundle" ? (
+                          <span className="checkout-bundle-thumb-stack">
+                            {line.stickers.slice(0, 3).map((sticker) => (
+                              <img
+                                key={sticker.id}
+                                src={sticker.image}
+                                alt={sticker.name}
+                              />
+                            ))}
+                          </span>
+                        ) : (
+                          <CheckoutLineThumb
+                            imagePath={line.sticker.image}
+                            alt={line.sticker.name}
+                            laminateId={line.laminateId}
+                          />
+                        )}
                       </span>
                       <span className="checkout-name">
-                        {line.sticker.name}
+                        {line.kind === "bundle" ? line.name : line.sticker.name}
                         <small>
                           <LaminateSwatch laminateId={line.laminateId} />
                           {LAMINATES[line.laminateId].label} · $
-                          {getVariantPrice(line.sticker.price, line.laminateId).toFixed(2)}
+                          {line.kind === "bundle"
+                            ? `${line.unitPrice.toFixed(2)} set`
+                            : getVariantPrice(line.sticker.price, line.laminateId).toFixed(2)}
                         </small>
                       </span>
                       <span className="checkout-qty">x{line.count}</span>
                       <span className="checkout-line-total">
                         $
-                        {(
-                          getVariantPrice(line.sticker.price, line.laminateId) *
-                          line.count
-                        ).toFixed(2)}
+                        {((line.kind === "bundle"
+                          ? line.unitPrice
+                          : getVariantPrice(line.sticker.price, line.laminateId)) *
+                          line.count).toFixed(2)}
                       </span>
                     </li>
                   ))}
