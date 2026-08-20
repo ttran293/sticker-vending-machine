@@ -39,39 +39,33 @@ type DispensedItem = {
   laminateId: LaminateId;
 };
 
+type LastSelection = {
+  key: string;
+  label: string;
+  code: string;
+  name: string;
+  stickerId?: string;
+};
+
 type StickerBundle = {
   id: string;
   name: string;
   note: string;
-  match: (sticker: Sticker) => boolean;
+  folder: string;
+  stickers: Sticker[];
 };
 
-const STICKER_BUNDLES: StickerBundle[] = [
-  {
-    id: "hat-dog-set",
-    name: "Hat Dog Set",
-    note: "all five hat pups",
-    match: (sticker) => sticker.id.startsWith("hat-dog-"),
-  },
-  {
-    id: "cat-climb-set",
-    name: "Cat Climb Set",
-    note: "classic wall crew",
-    match: (sticker) => sticker.id.startsWith("cat-climb-v"),
-  },
-  {
-    id: "cat-climb-exp-set",
-    name: "Cat Climb Exp Set",
-    note: "meme send pack",
-    match: (sticker) => sticker.id.startsWith("cat-climb-exp-"),
-  },
-  {
-    id: "buttercup-set",
-    name: "Buttercup Set",
-    note: "complete mood pack",
-    match: (sticker) => sticker.id.startsWith("buttercup-"),
-  },
-];
+function getStickerFolder(image: string) {
+  const path = image.split("?")[0] ?? image;
+  const match = path.match(/\/stickers\/([^/]+)\//);
+  return match?.[1] ?? null;
+}
+
+function formatBundleLabel(folder: string) {
+  return folder
+    .replace(/[-_]+/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
 
 export type BundleCartLine = {
   kind: "bundle";
@@ -132,7 +126,7 @@ export default function VendingMachine({
 }) {
   const [counts, setCounts] = useState<Record<string, number>>({});
   const [dispensedItems, setDispensedItems] = useState<DispensedItem[]>([]);
-  const [lastPicked, setLastPicked] = useState<Sticker | null>(null);
+  const [lastSelection, setLastSelection] = useState<LastSelection | null>(null);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [confirmed, setConfirmed] = useState(false);
   const [infoSticker, setInfoSticker] = useState<Sticker | null>(null);
@@ -202,13 +196,17 @@ export default function VendingMachine({
     setDispensedItems((items) => [dispensedItem, ...items]);
     setCounts((c) => ({ ...c, [variantKey]: (c[variantKey] ?? 0) + 1 }));
     selectFinish(sticker, laminateId);
-    setLastPicked(sticker);
+    setLastSelection({
+      key: `${variantKey}-${dispenseSeq.current}`,
+      label: "SELECTED",
+      code: sticker.slotCode,
+      name: sticker.name,
+      stickerId: sticker.id,
+    });
   };
 
   const addBundle = (bundle: StickerBundle, laminateId: LaminateId) => {
-    const bundleStickers = stickers.filter(
-      (sticker) => !sticker.placeholder && bundle.match(sticker),
-    );
+    const bundleStickers = bundle.stickers;
     if (bundleStickers.length === 0) return;
 
     const key = getBundleKey(bundle.id, laminateId);
@@ -224,7 +222,12 @@ export default function VendingMachine({
       })),
       ...items,
     ]);
-    setLastPicked(bundleStickers[0]);
+    setLastSelection({
+      key: `${key}-${dispenseSeq.current}`,
+      label: "SELECTED SET",
+      code: "SET",
+      name: bundle.name,
+    });
   };
 
   const decrement = (line: CartLine) => {
@@ -299,7 +302,9 @@ export default function VendingMachine({
       delete next[line.key];
       return next;
     });
-    setLastPicked((prev) => (prev?.id === line.sticker.id ? null : prev));
+    setLastSelection((prev) =>
+      prev?.stickerId === line.sticker.id ? null : prev,
+    );
   };
 
   const stickerLines: CartLine[] = useMemo(
@@ -319,17 +324,32 @@ export default function VendingMachine({
   );
 
   const availableBundles = useMemo(
-    () =>
-      STICKER_BUNDLES.map((bundle) => {
-        const bundleStickers = stickers.filter(
-          (sticker) => !sticker.placeholder && bundle.match(sticker),
-        );
+    () => {
+      const stickersByFolder = new Map<string, Sticker[]>();
 
-        return {
-          ...bundle,
-          stickers: bundleStickers,
-        };
-      }).filter((bundle) => bundle.stickers.length >= 2),
+      for (const sticker of stickers) {
+        if (sticker.placeholder) continue;
+        const folder = getStickerFolder(sticker.image);
+        if (!folder) continue;
+
+        const folderStickers = stickersByFolder.get(folder) ?? [];
+        folderStickers.push(sticker);
+        stickersByFolder.set(folder, folderStickers);
+      }
+
+      return Array.from(stickersByFolder.entries())
+        .map(([folder, folderStickers]) => {
+          const label = formatBundleLabel(folder);
+          return {
+            id: `folder-${folder}-set`,
+            name: `${label} Set`,
+            note: `${label} folder`,
+            folder,
+            stickers: folderStickers,
+          };
+        })
+        .filter((bundle) => bundle.stickers.length >= 2);
+    },
     [stickers],
   );
 
@@ -424,7 +444,7 @@ export default function VendingMachine({
       setBundleCounts({});
       setDispensedItems([]);
       dispenseSeq.current = 0;
-      setLastPicked(null);
+      setLastSelection(null);
       setConfirmed(false);
       setAppliedCoupon(null);
       setCouponInput("");
@@ -527,23 +547,37 @@ export default function VendingMachine({
               <MusicPlayer />
             </div>
 
-            <div className="digital-display">
-              <span className="display-label">SELECTED</span>
+            <motion.div
+              className="digital-display"
+              key={lastSelection?.key ?? "none"}
+              initial={{ boxShadow: "0 0 0 rgba(255, 248, 236, 0)" }}
+              animate={{
+                boxShadow: [
+                  "0 0 0 rgba(255, 248, 236, 0)",
+                  "0 0 18px rgba(255, 248, 236, 0.52)",
+                  "0 0 0 rgba(255, 248, 236, 0)",
+                ],
+              }}
+              transition={{ duration: 0.42, ease: "easeOut" }}
+            >
+              <span className="display-label">
+                {lastSelection?.label ?? "SELECTED"}
+              </span>
               <AnimatePresence mode="popLayout">
                 <motion.span
-                  key={lastPicked?.id ?? "none"}
+                  key={lastSelection?.key ?? "none"}
                   className="display-code"
                   initial={{ y: 10, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   exit={{ y: -10, opacity: 0 }}
                 >
-                  {lastPicked ? lastPicked.slotCode : "--"}
+                  {lastSelection ? lastSelection.code : "--"}
                 </motion.span>
               </AnimatePresence>
               <span className="display-name">
-                {lastPicked ? lastPicked.name : "pick a sticker"}
+                {lastSelection ? lastSelection.name : "pick a sticker"}
               </span>
-            </div>
+            </motion.div>
 
             <div className="cart">
               <div className="cart-head">
@@ -579,7 +613,19 @@ export default function VendingMachine({
                       <span className="cart-item-thumb">
                         {line.kind === "bundle" ? (
                           <span className="cart-bundle-thumb">
-                            <img src={line.stickers[0].image} alt={line.name} />
+                            {line.stickers.map((sticker, index) => (
+                              <img
+                                key={sticker.id}
+                                src={sticker.image}
+                                alt=""
+                                aria-hidden="true"
+                                style={{
+                                  ["--bundle-thumb-index" as string]: index,
+                                  ["--bundle-thumb-total" as string]:
+                                    line.stickers.length,
+                                }}
+                              />
+                            ))}
                             <span className="cart-bundle-count">
                               {line.stickers.length}
                             </span>
@@ -638,7 +684,7 @@ export default function VendingMachine({
                         <button
                           onClick={() => {
                             if (line.kind === "bundle") {
-                              const bundle = STICKER_BUNDLES.find(
+                              const bundle = availableBundles.find(
                                 (item) => item.id === line.bundleId,
                               );
                               if (bundle) addBundle(bundle, line.laminateId);
