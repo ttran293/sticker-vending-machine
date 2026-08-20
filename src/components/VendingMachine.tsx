@@ -578,14 +578,11 @@ export default function VendingMachine({
                     >
                       <span className="cart-item-thumb">
                         {line.kind === "bundle" ? (
-                          <span className="cart-bundle-thumb-stack">
-                            {line.stickers.slice(0, 3).map((sticker) => (
-                              <img
-                                key={sticker.id}
-                                src={sticker.image}
-                                alt={sticker.name}
-                              />
-                            ))}
+                          <span className="cart-bundle-thumb">
+                            <img src={line.stickers[0].image} alt={line.name} />
+                            <span className="cart-bundle-count">
+                              {line.stickers.length}
+                            </span>
                           </span>
                         ) : (
                           <StickerThumb
@@ -602,6 +599,9 @@ export default function VendingMachine({
                           {line.kind === "bundle" ? line.name : line.sticker.name}
                         </strong>
                         <small>
+                          {line.kind === "bundle" && (
+                            <span className="cart-item-set-label">SET</span>
+                          )}
                           <span className="cart-item-finish">
                             <LaminateSwatch laminateId={line.laminateId} />
                             {LAMINATES[line.laminateId].label}
